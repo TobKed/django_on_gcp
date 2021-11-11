@@ -1,6 +1,6 @@
 
-# Created by https://www.toptal.com/developers/gitignore/api/python,venv,virtualenv,macos,windows,linux,jetbrains+all,django
-# Edit at https://www.toptal.com/developers/gitignore?templates=python,venv,virtualenv,macos,windows,linux,jetbrains+all,django
+# Created by https://www.toptal.com/developers/gitignore/api/venv,linux,macos,python,django,windows,virtualenv,jetbrains+all,terraform
+# Edit at https://www.toptal.com/developers/gitignore?templates=venv,linux,macos,python,django,windows,virtualenv,jetbrains+all,terraform
 
 ### Django ###
 *.log
@@ -11,7 +11,6 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media
-static
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
@@ -351,6 +350,41 @@ Temporary Items
 
 # Cython debug symbols
 
+### Terraform ###
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Exclude all .tfvars files, which are likely to contain sentitive data, such as
+# password, private keys, and other secrets. These should not be part of version
+# control as they are data points which are potentially sensitive and subject
+# to change depending on the environment.
+#
+*.tfvars
+
+# Ignore override files as they are usually used to override resources locally and so
+# are not checked in
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include override files you do wish to add to version control using negated pattern
+# !example_override.tf
+
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+# example: *tfplan*
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
 ### venv ###
 # Virtualenv
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
@@ -393,4 +427,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/python,venv,virtualenv,macos,windows,linux,jetbrains+all,django
+# End of https://www.toptal.com/developers/gitignore/api/venv,linux,macos,python,django,windows,virtualenv,jetbrains+all,terraform

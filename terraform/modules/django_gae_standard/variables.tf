@@ -6,11 +6,13 @@ variable "project_id" {
 variable "region" {
   description = "Region of the components"
   type        = string
+  default     = "us-central1"
 }
 
 variable "zone" {
   description = "Zone of the components"
   type        = string
+  default     = "us-central1-a"
 }
 
 variable "django_secret_key" {
