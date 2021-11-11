@@ -24,6 +24,18 @@ variable "django_settings_name" {
   default     = "django_settings"
 }
 
+variable "sql_database_instance_name" {
+  description = "SQL database instance name"
+  type        = string
+  default     = "database-instance"
+}
+
+variable "sql_database_name" {
+  description = "SQL database name"
+  type        = string
+  default     = "database"
+}
+
 variable "sql_user" {
   description = "SQL database username"
   type        = string
@@ -32,4 +44,10 @@ variable "sql_user" {
 variable "sql_password" {
   description = "SQL database password"
   type        = string
+}
+
+variable "gcs_bucket_name" {
+  description = "Name of existing Google Cloud Storage bucket (define if static files should be served from GCS)"
+  type        = string
+  default     = ""
 }

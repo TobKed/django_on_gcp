@@ -36,7 +36,7 @@ SECRET_KEY = env(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", False)
 
-
+# TODO: this should be changed for production
 ALLOWED_HOSTS = ["*"]
 
 
