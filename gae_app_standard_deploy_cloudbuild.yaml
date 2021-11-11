@@ -35,9 +35,10 @@ steps:
     env:
       - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ["app", "deploy", "--quiet"]
+    args: ["app", "deploy", "${_GAE_FILE}", "--quiet"]
 
 substitutions:
+  _GAE_FILE: gae_app_standard.yaml
   _INSTANCE_NAME: db-instance-6556fbf0
   _REGION: europe-west3
   _SERVICE_NAME: polls-service

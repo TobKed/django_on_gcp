@@ -58,7 +58,7 @@ resource "google_sql_user" "sql_user" {
 }
 
 resource "google_secret_manager_secret" "django_settings" {
-  secret_id  = "django_settings"
+  secret_id  = var.django_settings_name
   depends_on = [google_project_service.gcp_services]
   labels = {
     label = "django_settings"

@@ -37,7 +37,7 @@ SECRET_KEY = env(
 DEBUG = env.bool("DEBUG", False)
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -83,7 +83,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "mysite.wsgi.application"
 
 
-# Database
+# DatabaseŃ
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 default_sqlite3_database = "sqlite:///" + str(BASE_DIR / "db.sqlite3")
@@ -127,9 +127,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_ROOT = "static"
+GS_BUCKET_NAME = env("GS_BUCKET_NAME", default=None)
+
 STATIC_URL = "/static/"
-STATICFILES_DIRS = []
+
+if GS_BUCKET_NAME:
+    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    GS_DEFAULT_ACL = "publicRead"
+else:
+    STATIC_ROOT = "static"
+    STATICFILES_DIRS = []
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

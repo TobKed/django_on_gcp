@@ -6,4 +6,7 @@ from django.urls import include, path
 urlpatterns = [
     path("", include("polls.urls")),
     path("admin/", admin.site.urls),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
+
+if not settings.GS_BUCKET_NAME:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

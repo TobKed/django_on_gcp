@@ -18,6 +18,12 @@ variable "django_secret_key" {
   type        = string
 }
 
+variable "django_settings_name" {
+  description = "Django settings name"
+  type        = string
+  default     = "django_settings"
+}
+
 variable "sql_user" {
   description = "SQL database username"
   type        = string
