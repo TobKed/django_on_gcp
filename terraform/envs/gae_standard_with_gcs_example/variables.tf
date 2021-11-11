@@ -20,6 +20,7 @@ variable "sql_database_instance_name" {
   type        = string
 }
 
+
 variable "django_secret_key" {
   description = "Django app secret key"
   type        = string

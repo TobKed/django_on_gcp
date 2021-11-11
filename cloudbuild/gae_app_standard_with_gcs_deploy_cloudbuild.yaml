@@ -25,20 +25,30 @@ steps:
         "migrate",
       ]
 
-  # "normal" way
-  - name: "python:3.9"
-    entrypoint: pip
-    args: ["install", "-r", "requirements.txt", "--user"]
-  - name: "python:3.9"
-    entrypoint: python
-    args: ["manage.py", "collectstatic"]
-    env:
-      - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
+  - id: "apply migrations"
+    name: "gcr.io/google-appengine/exec-wrapper"
+    args:
+      [
+        "-i",
+        "gcr.io/$PROJECT_ID/${_SERVICE_NAME}",
+        "-s",
+        "${PROJECT_ID}:${_REGION}:${_INSTANCE_NAME}",
+        "-e",
+        "SETTINGS_NAME=${_SECRET_SETTINGS_NAME}",
+        "-e",
+        "GOOGLE_CLOUD_PROJECT=$PROJECT_ID",
+        "--",
+        "python",
+        "manage.py",
+        "collectstatic",
+        "--noinput"
+      ]
+
   - name: 'gcr.io/cloud-builders/gcloud'
     args: ["app", "deploy", "${_GAE_FILE}", "--quiet"]
 
 substitutions:
-  _GAE_FILE: gae_app_standard.yaml
+  _GAE_FILE: gae_app_standard_with_gcs.yaml
   _INSTANCE_NAME: db-instance
   _REGION: us-central1
   _SERVICE_NAME: polls-service

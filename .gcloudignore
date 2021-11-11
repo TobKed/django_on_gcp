@@ -6,6 +6,8 @@
 !mysite/**
 !polls/**
 !Dockerfile
+!gae_app_standard.yaml
+!gae_app_standard_with_gcs.yaml
 !main.py
 !manage.py
 !requirements.txt

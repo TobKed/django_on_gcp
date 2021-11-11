@@ -8,6 +8,12 @@ provider "google" {
   zone    = var.zone
 }
 
+resource "google_storage_bucket" "bucket" {
+  name          = "${var.project_id}-media"
+  location      = "EU"
+  force_destroy = true
+}
+
 module "django_gae_standard" {
   source = "../../modules/django_gae_standard"
 
@@ -19,4 +25,5 @@ module "django_gae_standard" {
   sql_user                   = var.sql_user
   sql_password               = var.sql_password
   sql_database_instance_name = var.sql_database_instance_name
+  gcs_bucket_name            = google_storage_bucket.bucket.name
 }
