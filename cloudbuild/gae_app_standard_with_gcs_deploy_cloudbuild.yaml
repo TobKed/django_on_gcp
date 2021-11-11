@@ -25,7 +25,7 @@ steps:
         "migrate",
       ]
 
-  - id: "apply migrations"
+  - id: "collect static"
     name: "gcr.io/google-appengine/exec-wrapper"
     args:
       [

@@ -25,7 +25,7 @@ They will be used to provide input variables for terraform and for `gcloud` comm
 export PROJECT_ID=django-gae-tf-test-proj-2
 export REGION=europe-central2
 export ZONE=europe-central2-a
-export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db"
+export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db-bis"
 
 export DJANGO_SECRET_KEY=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 50 | head -n1)
 export SQL_USER=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
@@ -71,11 +71,23 @@ deployment of the application itself should be handled separately.
 
 [Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)
 
+## Set infrastructure
+
+
+
+## Deployment
 
 ```bash
 gcloud builds submit  \
     --project $PROJECT_ID \
     --config cloudbuild/gae_app_standard_deploy_cloudbuild.yaml \
+    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION
+```
+
+```bash
+gcloud builds submit  \
+    --project $PROJECT_ID \
+    --config cloudbuild/gae_app_standard_with_gcs_deploy_cloudbuild.yaml \
     --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION
 ```
 
