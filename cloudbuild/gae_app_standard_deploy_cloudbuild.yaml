@@ -31,7 +31,7 @@ steps:
     args: ["install", "-r", "requirements.txt", "--user"]
   - name: "python:3.9"
     entrypoint: python
-    args: ["manage.py", "collectstatic"]
+    args: ["manage.py", "collectstatic", "--verbosity", "2", "--noinput"]
     env:
       - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
   - name: 'gcr.io/cloud-builders/gcloud'

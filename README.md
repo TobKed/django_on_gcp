@@ -1,18 +1,24 @@
 
 # How to deploy Django application on Google Cloud Platform.
 
+## What and why
 
 
 There are many ways to deploy Django application on GCP:
 
  - App Engine:
-   - standard environment
-   - flexible environment
- - Cloud Run
+   - standard environment (without and with GCS storage)
+   - flexible environment (with GCS storage)
+ - Cloud Run (with GCS storage)
  - Kubernetes (maybe covered here, we will see)
  - Compute Engine (not covered here)
 
+## Perequisites
 
+Topics  with which you should be familiar with since they will be not covered here:
+
+ - Google Cloud Platform: basics of the services, usage of `gcloud` CLI, managing billing
+ - Terraform
 
 ## App Engine - standard environment
 
@@ -25,7 +31,8 @@ They will be used to provide input variables for terraform and for `gcloud` comm
 export PROJECT_ID=django-gae-tf-test-proj-2
 export REGION=europe-central2
 export ZONE=europe-central2-a
-export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db-bis"
+export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db-biss"
+export SERVICE_NAME=polls-service
 
 export DJANGO_SECRET_KEY=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 50 | head -n1)
 export SQL_USER=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
@@ -77,20 +84,59 @@ deployment of the application itself should be handled separately.
 
 ## Deployment
 
+App engine standard
+
 ```bash
 gcloud builds submit  \
     --project $PROJECT_ID \
     --config cloudbuild/gae_app_standard_deploy_cloudbuild.yaml \
-    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION
+    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
 ```
+
+App Engine standard with Google Cloud Storage
 
 ```bash
 gcloud builds submit  \
     --project $PROJECT_ID \
     --config cloudbuild/gae_app_standard_with_gcs_deploy_cloudbuild.yaml \
-    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION
+    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
+```
+
+App Engine flexible (with Google Cloud Storage)
+
+```bash
+gcloud builds submit  \
+    --project $PROJECT_ID \
+    --config cloudbuild/gae_app_flexible_cloudbuild.yaml \
+    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
+```
+
+Display GAE application url:
+
+```bash
+gcloud app describe --format "value(defaultHostname)"
+```
+
+```bash
+gcloud run deploy $SERVICE_NAME \
+    --platform managed \
+    --region $REGION \
+    --image gcr.io/$PROJECT_ID/polls-service \
+    --add-cloudsql-instances $PROJECT_ID:$REGION:$SQL_DATABASE_INSTANCE_NAME \
+    --allow-unauthenticated
+
+gcloud run deploy $SERVICE_NAME \
+    --platform managed \
+    --region $REGION \
+    --image gcr.io/$PROJECT_ID/$SERVICE_NAME
 ```
 
 ## Warnings!
 
  1. Remember to edit `.gcloudignore`. It excludes all files except implicitly added.
+
+## Links
+
+https://cloud.google.com/python/django/appengine
+https://cloud.google.com/python/django/flexible-environment
+https://cloud.google.com/python/django/run
