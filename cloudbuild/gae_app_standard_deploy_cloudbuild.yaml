@@ -25,16 +25,18 @@ steps:
         "migrate",
       ]
 
-  # "normal" way
-  - name: "python:3.9"
+  - id: "install requirements"
+    name: "python:3.9"
     entrypoint: pip
     args: ["install", "-r", "requirements.txt", "--user"]
-  - name: "python:3.9"
+  - id: "collect static files"
+    name: "python:3.9"
     entrypoint: python
     args: ["manage.py", "collectstatic", "--verbosity", "2", "--noinput"]
     env:
-      - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID'
-  - name: 'gcr.io/cloud-builders/gcloud'
+      - "GOOGLE_CLOUD_PROJECT=$PROJECT_ID"
+  - id: "deploy app"
+    name: "gcr.io/cloud-builders/gcloud"
     args: ["app", "deploy", "${_GAE_FILE}", "--quiet"]
 
 substitutions:

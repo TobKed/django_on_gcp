@@ -7,10 +7,6 @@ provider "google" {
 data "google_project" "project" {
 }
 
-resource "random_id" "random_suffix" {
-  byte_length = 4
-}
-
 variable "gcp_service_list" {
   description = "The list of apis necessary for the project"
   type        = list(string)

@@ -25,7 +25,7 @@ steps:
         "migrate",
       ]
 
-  - id: "collect static"
+  - id: "collect static files"
     name: "gcr.io/google-appengine/exec-wrapper"
     args:
       [
@@ -46,7 +46,8 @@ steps:
         "--noinput"
       ]
 
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - id: "modify configuration file"
+    name: "gcr.io/cloud-builders/gcloud"
     entrypoint: 'bash'
     args:
       - "-c"
@@ -63,11 +64,13 @@ steps:
   #   To continue using the [python] runtime, please remove the Dockerfile from this directory.
   #
   # more info about custom runtimes at: https://cloud.google.com/appengine/docs/flexible/custom-runtimes
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - id: "delete Dockerfile"
+    name: "gcr.io/cloud-builders/gcloud"
     entrypoint: 'bash'
     args: ["-c", "rm Dockerfile"]
 
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - id: "deploy app"
+    name: "gcr.io/cloud-builders/gcloud"
     args: ["app", "deploy", "${_GAE_FILE}", "--quiet"]
 
 substitutions:
