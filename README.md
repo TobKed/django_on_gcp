@@ -33,6 +33,8 @@ export REGION=europe-central2
 export ZONE=europe-central2-a
 export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db-biss"
 export SERVICE_NAME=polls-service
+export SERVICE_ACCOUNT_NAME=polls-service-account  # for cloud run
+export SERVICE_ACCOUNT="${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"   # for cloud run
 
 export DJANGO_SECRET_KEY=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 50 | head -n1)
 export SQL_USER=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
@@ -54,6 +56,7 @@ export TF_VAR_django_secret_key=$DJANGO_SECRET_KEY
 export TF_VAR_sql_database_instance_name=$SQL_DATABASE_INSTANCE_NAME
 export TF_VAR_sql_user=$SQL_USER
 export TF_VAR_sql_password=$SQL_PASSWORD
+export TF_VAR_cloud_run_service_account_name=$SERVICE_ACCOUNT_NAME
 ```
 
 
@@ -62,13 +65,14 @@ With variables set in previous such file could be generated with following comma
 
 ```bash
 cat << EOF > terraform.tfvars
-project_id                 = "$PROJECT_ID"
-region                     = "$REGION"
-zone                       = "$ZONE"
-django_secret_key          = "$DJANGO_SECRET_KEY"
-sql_database_instance_name = "$SQL_DATABASE_INSTANCE_NAME"
-sql_user                   = "$SQL_USER"
-sql_password               = "$SQL_PASSWORD"
+project_id                     = "$PROJECT_ID"
+region                         = "$REGION"
+zone                           = "$ZONE"
+django_secret_key              = "$DJANGO_SECRET_KEY"
+sql_database_instance_name     = "$SQL_DATABASE_INSTANCE_NAME"
+sql_user                       = "$SQL_USER"
+sql_password                   = "$SQL_PASSWORD"
+cloud_run_service_account_name = "$SERVICE_ACCOUNT_NAME"
 EOF
 ```
 
@@ -84,30 +88,32 @@ deployment of the application itself should be handled separately.
 
 ## Deployment
 
-App engine standard
+### App Engine
+
+App Engine standard
 
 ```bash
-gcloud builds submit  \
-    --project $PROJECT_ID \
-    --config cloudbuild/gae_app_standard_deploy_cloudbuild.yaml \
-    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
+export GAE_FILE=cloudbuild/gae_app_standard_deploy_cloudbuild.yaml
 ```
 
 App Engine standard with Google Cloud Storage
 
 ```bash
-gcloud builds submit  \
-    --project $PROJECT_ID \
-    --config cloudbuild/gae_app_standard_with_gcs_deploy_cloudbuild.yaml \
-    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
+export GAE_FILE=cloudbuild/gae_app_standard_with_gcs_deploy_cloudbuild.yaml
 ```
 
 App Engine flexible (with Google Cloud Storage)
 
 ```bash
+export GAE_FILE=cloudbuild/gae_app_flexible_cloudbuild.yaml
+```
+
+Deploy:
+
+```bash
 gcloud builds submit  \
     --project $PROJECT_ID \
-    --config cloudbuild/gae_app_flexible_cloudbuild.yaml \
+    --config $GAE_FILE \
     --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
 ```
 
@@ -117,12 +123,14 @@ Display GAE application url:
 gcloud app describe --format "value(defaultHostname)"
 ```
 
+### Cloud Run
+
 ```bash
 gcloud run deploy $SERVICE_NAME \
     --platform managed \
     --region $REGION \
     --image gcr.io/$PROJECT_ID/polls-service \
-    --add-cloudsql-instances $PROJECT_ID:$REGION:$SQL_DATABASE_INSTANCE_NAME \
+    --set-cloudsql-instances $PROJECT_ID:$REGION:$SQL_DATABASE_INSTANCE_NAME \
     --allow-unauthenticated
 
 gcloud run deploy $SERVICE_NAME \

@@ -1,0 +1,73 @@
+steps:
+  - id: "build image"
+    name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-t", "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}", "."]
+
+  - id: "push image"
+    name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"]
+
+  - id: "apply migrations"
+    name: "gcr.io/google-appengine/exec-wrapper"
+    args:
+      [
+        "-i",
+        "gcr.io/$PROJECT_ID/${_SERVICE_NAME}",
+        "-s",
+        "${PROJECT_ID}:${_REGION}:${_INSTANCE_NAME}",
+        "-e",
+        "SETTINGS_NAME=${_SECRET_SETTINGS_NAME}",
+        "-e",
+        "GOOGLE_CLOUD_PROJECT=$PROJECT_ID",
+        "--",
+        "python",
+        "manage.py",
+        "migrate",
+      ]
+
+  - id: "collect static files"
+    name: "gcr.io/google-appengine/exec-wrapper"
+    args:
+      [
+        "-i",
+        "gcr.io/$PROJECT_ID/${_SERVICE_NAME}",
+        "-s",
+        "${PROJECT_ID}:${_REGION}:${_INSTANCE_NAME}",
+        "-e",
+        "SETTINGS_NAME=${_SECRET_SETTINGS_NAME}",
+        "-e",
+        "GOOGLE_CLOUD_PROJECT=$PROJECT_ID",
+        "--",
+        "python",
+        "manage.py",
+        "collectstatic",
+        "--verbosity",
+        "2",
+        "--noinput"
+      ]
+
+  - id: "deploy app"
+    name: "gcr.io/cloud-builders/gcloud"
+    args:
+      [
+      "run", "deploy",
+      "${_SERVICE_NAME}",
+      "--platform",
+      "managed",
+      "--region",
+      "${_REGION",
+      "--image",
+      "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}",
+      "--set-cloudsql-instances",
+      "${PROJECT_ID}:${_REGION}:${_INSTANCE_NAME}",
+      "--allow-unauthenticated"
+    ]
+
+substitutions:
+  _INSTANCE_NAME: db-instance
+  _REGION: us-central1
+  _SERVICE_NAME: polls-service
+  _SECRET_SETTINGS_NAME: django_settings
+
+images:
+  - "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"

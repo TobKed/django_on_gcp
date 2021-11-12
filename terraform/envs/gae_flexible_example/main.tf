@@ -14,7 +14,7 @@ resource "google_storage_bucket" "bucket" {
   force_destroy = true
 }
 
-module "django_gae_standard" {
+module "django_gae_flexible" {
   source = "../../modules/django_gae_flexible"
 
   project_id = var.project_id
