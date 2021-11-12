@@ -93,19 +93,19 @@ deployment of the application itself should be handled separately.
 App Engine standard
 
 ```bash
-export GAE_FILE=cloudbuild/gae_app_standard_deploy_cloudbuild.yaml
+export GAE_FILE=cloudbuild/gae_app_standard_deploy.yaml
 ```
 
 App Engine standard with Google Cloud Storage
 
 ```bash
-export GAE_FILE=cloudbuild/gae_app_standard_with_gcs_deploy_cloudbuild.yaml
+export GAE_FILE=cloudbuild/gae_app_standard_with_gcs_deploy.yaml
 ```
 
 App Engine flexible (with Google Cloud Storage)
 
 ```bash
-export GAE_FILE=cloudbuild/gae_app_flexible_cloudbuild.yaml
+export GAE_FILE=cloudbuild/gae_app_flexible.yaml
 ```
 
 Deploy:
