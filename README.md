@@ -13,6 +13,11 @@ There are many ways to deploy Django application on GCP:
  - Kubernetes (maybe covered here, we will see)
  - Compute Engine (not covered here)
 
+They are covered in GCP documentation (link here) however I wanted to wrap it in Terraform
+so provisioning infrastructure could be handled in the few commands.
+Additionaly I made Cloud Build files which are responsible for handling migrations, collecting static files
+and finally deploying applications to the target service.
+
 ## Perequisites
 
 Topics  with which you should be familiar with since they will be not covered here:
@@ -84,28 +89,24 @@ deployment of the application itself should be handled separately.
 
 ## Set infrastructure
 
-
-
-## Deployment
-
 ### App Engine
 
 App Engine standard
 
 ```bash
-export GAE_FILE=cloudbuild/gae_app_standard_deploy.yaml
+export CLOUD_BUILD_FILE=cloudbuild/gae_app_standard_deploy.yaml
 ```
 
 App Engine standard with Google Cloud Storage
 
 ```bash
-export GAE_FILE=cloudbuild/gae_app_standard_with_gcs_deploy.yaml
+export CLOUD_BUILD_FILE=cloudbuild/gae_app_standard_with_gcs_deploy.yaml
 ```
 
 App Engine flexible (with Google Cloud Storage)
 
 ```bash
-export GAE_FILE=cloudbuild/gae_app_flexible.yaml
+export CLOUD_BUILD_FILE=cloudbuild/gae_app_flexible.yaml
 ```
 
 Deploy:
@@ -113,7 +114,7 @@ Deploy:
 ```bash
 gcloud builds submit  \
     --project $PROJECT_ID \
-    --config $GAE_FILE \
+    --config $CLOUD_BUILD_FILE \
     --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
 ```
 
@@ -126,11 +127,25 @@ gcloud app describe --format "value(defaultHostname)"
 ### Cloud Run
 
 ```bash
+export CLOUD_BUILD_FILE=cloudbuild/cloud_run.yaml
+```
+
+```bash
+gcloud builds submit  \
+    --project $PROJECT_ID \
+    --config $CLOUD_BUILD_FILE \
+    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME,_SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME
+```
+
+#TODO fix to be tested
+```bash
 gcloud run deploy $SERVICE_NAME \
     --platform managed \
     --region $REGION \
-    --image gcr.io/$PROJECT_ID/polls-service \
+    --image gcr.io/$PROJECT_ID/$SERVICE_NAME \
     --set-cloudsql-instances $PROJECT_ID:$REGION:$SQL_DATABASE_INSTANCE_NAME \
+    --update-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID \
+    --service-account $SERVICE_ACCOUNT \
     --allow-unauthenticated
 
 gcloud run deploy $SERVICE_NAME \

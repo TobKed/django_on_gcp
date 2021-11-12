@@ -23,8 +23,3 @@ resource "google_project_service" "gcp_services" {
   project  = var.project_id
   service  = each.key
 }
-
-resource "google_app_engine_application" "app" {
-  project     = var.project_id
-  location_id = var.region
-}

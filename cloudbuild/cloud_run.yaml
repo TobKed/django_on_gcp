@@ -55,11 +55,14 @@ steps:
       "--platform",
       "managed",
       "--region",
-      "${_REGION",
+      "${_REGION}",
       "--image",
       "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}",
       "--set-cloudsql-instances",
       "${PROJECT_ID}:${_REGION}:${_INSTANCE_NAME}",
+      "--service-account",
+      "${_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com",
+      "--update-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID",
       "--allow-unauthenticated"
     ]
 
@@ -68,6 +71,7 @@ substitutions:
   _REGION: us-central1
   _SERVICE_NAME: polls-service
   _SECRET_SETTINGS_NAME: django_settings
+  _SERVICE_ACCOUNT_NAME: polls-service-account
 
 images:
   - "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"
