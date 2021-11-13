@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: SERVICE_NAME
+  labels:
+    app: SERVICE_NAME
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: SERVICE_NAME
+  template:
+    metadata:
+      labels:
+        app: SERVICE_NAME
+    spec:
+      containers:
+      - name: SERVICE_NAME-app
+        # TODO sed replace PROJECT_ID
+        # TODO replace SERVICE_NAME
+        image: gcr.io/PROIECT_ID/SERVICE_NAME
+        imagePullPolicy: Always
+        env:
+            - name: USE_CLOUD_SQL_AUTH_PROXY
+              value: "true"
+            - name: DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql
+                  key: database
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql
+                  key: username
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql
+                  key: password
+        ports:
+        - containerPort: 8080
+
+      - image: gcr.io/cloudsql-docker/gce-proxy:1.16
+        name: cloudsql-proxy
+        # TODO replace CLOUDSQL-CONNECTION-STRING
+        command: [
+            "/cloud_sql_proxy",
+            "--dir=/cloudsql",
+            "-instances=CLOUDSQL-CONNECTION-STRING=tcp:5432",
+            "-credential_file=/secrets/cloudsql/credentials.json"
+        ]
+        volumeMounts:
+          - name: cloudsql-oauth-credentials
+            mountPath: /secrets/cloudsql
+            readOnly: true
+          - name: ssl-certs
+            mountPath: /etc/ssl/certs
+          - name: cloudsql
+            mountPath: /cloudsql
+      volumes:
+        - name: cloudsql-oauth-credentials
+          secret:
+            secretName: cloudsql-oauth-credentials
+        - name: ssl-certs
+          hostPath:
+            path: /etc/ssl/certs
+        - name: cloudsql
+          emptyDir: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: SERVICE_NAME
+  labels:
+    app: SERVICE_NAME
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: SERVICE_NAME
