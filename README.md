@@ -1,3 +1,21 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [How to deploy Django application on Google Cloud Platform.](#how-to-deploy-django-application-on-google-cloud-platform)
+  - [Introduction](#introduction)
+  - [Perequisites](#perequisites)
+  - [App Engine - standard environment](#app-engine---standard-environment)
+  - [Set infrastructure](#set-infrastructure)
+    - [App Engine](#app-engine)
+    - [Cloud Run](#cloud-run)
+    - [GKE](#gke)
+  - [Warnings!](#warnings)
+  - [Links](#links)
+  - [TODO](#todo)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 
 # How to deploy Django application on Google Cloud Platform.
 

@@ -33,3 +33,14 @@ repos:
     hooks:
       - id: terraform_fmt
       - id: terraform_docs
+  - repo: https://github.com/thlorenz/doctoc.git
+    rev: v2.1.0
+    hooks:
+      - id: doctoc
+        name: Add TOC for md files
+        files: \.md$
+        args:
+          - "--maxlevel"
+          - "4"
+          - "--title"
+          - "**Table of Contents**"
