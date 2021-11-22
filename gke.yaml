@@ -1,3 +1,5 @@
+# TODO sed replace SERVICE_NAME
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,7 +19,6 @@ spec:
       containers:
       - name: SERVICE_NAME-app
         # TODO sed replace PROJECT_ID
-        # TODO replace SERVICE_NAME
         image: gcr.io/PROIECT_ID/SERVICE_NAME
         imagePullPolicy: Always
         env:
@@ -40,14 +41,13 @@ spec:
                   key: password
         ports:
         - containerPort: 8080
-
-      - image: gcr.io/cloudsql-docker/gce-proxy:1.16
-        name: cloudsql-proxy
-        # TODO replace CLOUDSQL-CONNECTION-STRING
+      - name: cloudsql-proxy
+        image: gcr.io/cloudsql-docker/gce-proxy:1.16
+        # TODO sed replace CLOUDSQL_CONNECTION_STRING
         command: [
             "/cloud_sql_proxy",
             "--dir=/cloudsql",
-            "-instances=CLOUDSQL-CONNECTION-STRING=tcp:5432",
+            "-instances=CLOUDSQL_CONNECTION_STRING=tcp:5432",
             "-credential_file=/secrets/cloudsql/credentials.json"
         ]
         volumeMounts:
@@ -58,6 +58,7 @@ spec:
             mountPath: /etc/ssl/certs
           - name: cloudsql
             mountPath: /cloudsql
+
       volumes:
         - name: cloudsql-oauth-credentials
           secret:
