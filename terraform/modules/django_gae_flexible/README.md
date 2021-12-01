@@ -67,5 +67,6 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_google_sql_database_instance_name"></a> [google\_sql\_database\_instance\_name](#output\_google\_sql\_database\_instance\_name) | n/a |
 | <a name="output_google_sql_database_name"></a> [google\_sql\_database\_name](#output\_google\_sql\_database\_name) | n/a |
 <!-- END_TF_DOCS -->

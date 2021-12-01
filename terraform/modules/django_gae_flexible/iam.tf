@@ -3,6 +3,7 @@ locals {
 }
 
 data "google_app_engine_default_service_account" "default" {
+  depends_on = [google_project_service.gcp_services]
 }
 
 resource "google_project_iam_binding" "secret_manager_secret_accessor" {

@@ -19,4 +19,5 @@ module "django_gae_standard" {
   sql_user                   = var.sql_user
   sql_password               = var.sql_password
   sql_database_instance_name = var.sql_database_instance_name
+  sql_database_name          = var.sql_database_name
 }

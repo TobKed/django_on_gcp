@@ -73,6 +73,10 @@ steps:
     name: "gcr.io/cloud-builders/gcloud"
     args: ["app", "deploy", "${_GAE_FILE}", "--quiet"]
 
+  - id: "get app url"
+    name: "gcr.io/cloud-builders/gcloud"
+    args: ["app",  "describe", "--format", "value(defaultHostname)"]
+
 substitutions:
   _GAE_FILE: gae_app_flexible.yaml
   _INSTANCE_NAME: db-instance

@@ -25,6 +25,7 @@ module "django_cloud_run" {
   sql_user                       = var.sql_user
   sql_password                   = var.sql_password
   sql_database_instance_name     = var.sql_database_instance_name
+  sql_database_name              = var.sql_database_name
   gcs_bucket_name                = google_storage_bucket.bucket.name
   cloud_run_service_account_name = var.cloud_run_service_account_name
 }

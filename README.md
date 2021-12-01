@@ -4,12 +4,11 @@
 
 - [How to deploy Django application on Google Cloud Platform.](#how-to-deploy-django-application-on-google-cloud-platform)
   - [Introduction](#introduction)
-  - [Perequisites](#perequisites)
-  - [App Engine - standard environment](#app-engine---standard-environment)
-  - [Set infrastructure](#set-infrastructure)
-    - [App Engine](#app-engine)
-    - [Cloud Run](#cloud-run)
-    - [GKE](#gke)
+  - [Prerequisites](#prerequisites)
+  - [Instructions](#instructions)
+    - [1. Variables specific for your GCP project](#1-variables-specific-for-your-gcp-project)
+    - [2. Set up infrastructure](#2-set-up-infrastructure)
+    - [3. Deploy app](#3-deploy-app)
   - [Warnings!](#warnings)
   - [Links](#links)
   - [TODO](#todo)
@@ -46,7 +45,7 @@ For GCB purpose I wraped up app in Docker, even App Engine does not require it, 
 Hopefully such condensed project may help you to learn how interconnected Cloud services may be used along with Python project so some ideas could be picked in the future.
 
 
-## Perequisites
+## Prerequisites
 
 Topics with which you should be familiar with since they will be not covered:
 
@@ -62,8 +61,11 @@ What you should  prepare:
  - Python [optionally] - Python 3.9 in virtual environment if you want to run Django app locally
 
 
--- no do review below this line
-## App Engine - standard environment
+## Instructions
+
+### 1. Variables specific for your GCP project
+
+1. Shell environmental variables
 
 Set environmental variables.
 Some values you have to know by hard, like `PROJECT_ID`.
@@ -71,10 +73,11 @@ Other you can generate on fly, like `DJANGO_SECRET_KEY` however remember to keep
 They will be used to provide input variables for terraform and for `gcloud` commands.
 
 ```bash
-export PROJECT_ID=django-gae-tf-test-proj-2
+export PROJECT_ID=django-cloud-tf-test-001
 export REGION=europe-central2
 export ZONE=europe-central2-a
-export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db-biss"
+export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db-instance"
+export SQL_DATABASE_NAME="${PROJECT_ID}-db"
 export SERVICE_NAME=polls-service
 export SERVICE_ACCOUNT_NAME=polls-service-account  # for cloud run
 export SERVICE_ACCOUNT="${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"   # for cloud run
@@ -84,9 +87,13 @@ export SQL_USER=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | h
 export SQL_PASSWORD=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
 ```
 
+1. `gcloud` config project
+
 ```bash
 gcloud config set project $PROJECT_ID
 ```
+
+2. Terraform variables
 
 Terraform can read variables from environment variables.
 Naming convention is `TF_VAR_variable_name`.
@@ -97,11 +104,11 @@ export TF_VAR_region=$REGION
 export TF_VAR_zone=$ZONE
 export TF_VAR_django_secret_key=$DJANGO_SECRET_KEY
 export TF_VAR_sql_database_instance_name=$SQL_DATABASE_INSTANCE_NAME
+export TF_VAR_sql_database_name=$SQL_DATABASE_NAME
 export TF_VAR_sql_user=$SQL_USER
 export TF_VAR_sql_password=$SQL_PASSWORD
 export TF_VAR_cloud_run_service_account_name=$SERVICE_ACCOUNT_NAME
 ```
-
 
 Another way to provide input variables is `.tfvars` file.
 With variables set in previous such file could be generated with following command:
@@ -113,73 +120,112 @@ region                         = "$REGION"
 zone                           = "$ZONE"
 django_secret_key              = "$DJANGO_SECRET_KEY"
 sql_database_instance_name     = "$SQL_DATABASE_INSTANCE_NAME"
+sql_database_name              = "$SQL_DATABASE_NAME"
 sql_user                       = "$SQL_USER"
 sql_password                   = "$SQL_PASSWORD"
 cloud_run_service_account_name = "$SERVICE_ACCOUNT_NAME"
 EOF
 ```
 
+### 2. Set up infrastructure
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+Known issues:
+
+ - 13 years old google issue [No way to delete an application ](https://issuetracker.google.com/issues/35874988)
+
+    ```Error: Error creating App Engine application: googleapi: Error 409: This application already exists and cannot be re-created., alreadyExist```
+
+### 3. Deploy app
 
 In my opinion when possible *Terraform* should be used to provide infrastructure only and
 deployment of the application itself should be handled separately.
 
 [Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)
 
-## Set infrastructure
+1. Set GCB pipeline
 
-### App Engine
+ - App Engine standard environment
 
-App Engine standard
+    ```bash
+    export CLOUD_BUILD_FILE=cloudbuild/gae_app_standard_deploy.yaml
+    ```
 
-```bash
-export CLOUD_BUILD_FILE=cloudbuild/gae_app_standard_deploy.yaml
+ - App Engine standard environment with Google Cloud Storage
+
+    ```bash
+    export CLOUD_BUILD_FILE=cloudbuild/gae_app_standard_with_gcs_deploy.yaml
+    ```
+
+ - App Engine flexible environment (with Google Cloud Storage)
+
+    ```bash
+    export CLOUD_BUILD_FILE=cloudbuild/gae_app_flexible.yaml
+    ```
+
+ - Cloud Run
+
+    ```bash
+    export CLOUD_BUILD_FILE=cloudbuild/cloud_run.yaml
+    ```
+
+ - Kubernetes
+
+    ```bash
+    export CLOUD_BUILD_FILE=cloudbuild/gke.yaml
+    ```
+
+2. Deploy
+
+    Path in `CLOUD_BUILD_FILE` is intended bo being run from root repository directory.
+
+ - App Engine
+
+    ```bash
+    gcloud builds submit  \
+        --project $PROJECT_ID \
+        --config $CLOUD_BUILD_FILE \
+        --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
+    ```
+
+    Display GAE application url:
+
+    ```bash
+    gcloud app describe --format "value(defaultHostname)"
+    ```
+
+    Known issues:
+
+   - error during last step, terraform google provider issue, wait a little and retry
+
+     `Step #5 - "deploy app": ERROR: (gcloud.app.deploy) NOT_FOUND: Unable to retrieve P4SA: [service-123456789101@gcp-gae-service.iam.gserviceaccount.com] from GAIA. Could be GAIA propagation delay or request from deleted apps.
+Finished Step #5 - "deploy app"`
+
+
+ - Cloud Run
+
+    ```bash
+    export CLOUD_BUILD_FILE=cloudbuild/cloud_run.yaml
+    ```
+
+    ```bash
+    gcloud builds submit  \
+        --project $PROJECT_ID \
+        --config $CLOUD_BUILD_FILE \
+        --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME,_SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME
+    ```
+
+3. Destroy infrastructure
+
+```shell
+terraform destroy
 ```
 
-App Engine standard with Google Cloud Storage
-
-```bash
-export CLOUD_BUILD_FILE=cloudbuild/gae_app_standard_with_gcs_deploy.yaml
-```
-
-App Engine flexible (with Google Cloud Storage)
-
-```bash
-export CLOUD_BUILD_FILE=cloudbuild/gae_app_flexible.yaml
-```
-
-Deploy:
-
-```bash
-gcloud builds submit  \
-    --project $PROJECT_ID \
-    --config $CLOUD_BUILD_FILE \
-    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
-```
-
-Display GAE application url:
-
-```bash
-gcloud app describe --format "value(defaultHostname)"
-```
-
-### Cloud Run
-
-```bash
-export CLOUD_BUILD_FILE=cloudbuild/cloud_run.yaml
-```
-
-```bash
-gcloud builds submit  \
-    --project $PROJECT_ID \
-    --config $CLOUD_BUILD_FILE \
-    --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME,_SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME
-```
-
-### GKE
-
-```bash
-export CLOUD_BUILD_FILE=cloudbuild/gke.yaml
-```
 
 ## Warnings!
 
@@ -193,5 +239,5 @@ export CLOUD_BUILD_FILE=cloudbuild/gke.yaml
 
 ## TODO
 
- - autogenerate cloud run service account based on the service name, less envs, simpler !
- -
+ - [ ] migration with superadmin creation
+ - [ ] autogenerate cloud run service account based on the service name, fewer envs, simpler !
