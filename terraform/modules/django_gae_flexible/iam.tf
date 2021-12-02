@@ -14,6 +14,8 @@ resource "google_project_iam_binding" "secret_manager_secret_accessor" {
     "serviceAccount:${data.google_app_engine_default_service_account.default.email}",
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
+
+  depends_on = [google_project_service.gcp_services]
 }
 
 resource "google_project_iam_binding" "app_engine_app_admin" {
@@ -23,6 +25,8 @@ resource "google_project_iam_binding" "app_engine_app_admin" {
   members = [
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
+
+  depends_on = [google_project_service.gcp_services]
 }
 
 resource "google_project_iam_binding" "cloudsql_admin" {
@@ -32,6 +36,8 @@ resource "google_project_iam_binding" "cloudsql_admin" {
   members = [
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
+
+  depends_on = [google_project_service.gcp_services]
 }
 
 resource "google_service_account_iam_binding" "admin-account-iam" {
@@ -41,4 +47,6 @@ resource "google_service_account_iam_binding" "admin-account-iam" {
   members = [
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
+
+  depends_on = [google_project_service.gcp_services]
 }

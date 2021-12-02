@@ -14,6 +14,8 @@ resource "google_storage_bucket_iam_binding" "storage_object_admin" {
   members = [
     "serviceAccount:${google_service_account.cloud_run_service_account.email}",
   ]
+
+  depends_on = [google_service_account.cloud_run_service_account]
 }
 
 resource "google_project_iam_binding" "secret_manager_secret_accessor" {
@@ -24,6 +26,11 @@ resource "google_project_iam_binding" "secret_manager_secret_accessor" {
     "serviceAccount:${google_service_account.cloud_run_service_account.email}",
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
+
+  depends_on = [
+    google_project_service.gcp_services,
+    google_service_account.cloud_run_service_account
+  ]
 }
 
 resource "google_project_iam_binding" "run_invoker" {
@@ -33,6 +40,8 @@ resource "google_project_iam_binding" "run_invoker" {
   members = [
     "serviceAccount:${google_service_account.cloud_run_service_account.email}",
   ]
+
+  depends_on = [google_service_account.cloud_run_service_account]
 }
 
 resource "google_project_iam_binding" "run_admin" {
@@ -42,6 +51,8 @@ resource "google_project_iam_binding" "run_admin" {
   members = [
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
+
+  depends_on = [google_project_service.gcp_services]
 }
 
 resource "google_project_iam_binding" "cloudsql_client" {
@@ -51,6 +62,8 @@ resource "google_project_iam_binding" "cloudsql_client" {
   members = [
     "serviceAccount:${google_service_account.cloud_run_service_account.email}",
   ]
+
+  depends_on = [google_project_service.gcp_services]
 }
 
 resource "google_project_iam_binding" "cloudsql_admin" {
@@ -60,6 +73,8 @@ resource "google_project_iam_binding" "cloudsql_admin" {
   members = [
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
+
+  depends_on = [google_service_account.cloud_run_service_account]
 }
 
 resource "google_service_account_iam_binding" "admin-account-iam" {
@@ -69,4 +84,6 @@ resource "google_service_account_iam_binding" "admin-account-iam" {
   members = [
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
+
+  depends_on = [google_project_service.gcp_services]
 }

@@ -141,6 +141,10 @@ Known issues:
 
     ```Error: Error creating App Engine application: googleapi: Error 409: This application already exists and cannot be re-created., alreadyExist```
 
+ - random null for `data.google_project.project.number`, https://github.com/hashicorp/terraform-provider-google/issues/10587#issuecomment-984589651:
+
+    ```The expression result is null. Cannot include a null value in a string template.```
+
 ### 3. Deploy app
 
 In my opinion when possible *Terraform* should be used to provide infrastructure only and
@@ -218,6 +222,12 @@ Finished Step #5 - "deploy app"`
         --project $PROJECT_ID \
         --config $CLOUD_BUILD_FILE \
         --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME,_SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME
+    ```
+
+    Display Cloud Run application url:
+
+    ```bash
+    gcloud run services list --filter SERVICE:$SERVICE_NAME --format "value(status.address.url)"
     ```
 
 3. Destroy infrastructure
