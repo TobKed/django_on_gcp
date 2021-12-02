@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [How to deploy Django application on Google Cloud Platform.](#how-to-deploy-django-application-on-google-cloud-platform)
+- [How to deploy a Django application on Google Cloud Platform.](#how-to-deploy-a-django-application-on-google-cloud-platform)
   - [Introduction](#introduction)
   - [Prerequisites](#prerequisites)
   - [Instructions](#instructions)
@@ -16,48 +16,48 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 
-# How to deploy Django application on Google Cloud Platform.
+# How to deploy a Django application on Google Cloud Platform.
 
 
 ## Introduction
 
-Cloud is consistently growing and it may be worth to consider it for your next Python project.
-But Cloud is also complex, number of available services is still growing, so decisions so if you want create configuration for your project.
-If you want learn how to run simple Django app in the Google Cloud Platform [GCP], how easy it can be done and also get the underlying services in form of the code (Infrastructure as Code [IaC])here it is the place for you.
+The Cloud is consistently growing and it may be worth considering for your next Python project.
+But Cloud is also very complex and the number of available services is still growing, as well as the number of decisions that have to be made when you want to create configuration for your project.
+If you want to learn how to run a simple, basic Django app in the Google Cloud Platform [GCP] and see how easy it can be as well as to get the underlying services in the form of the code (Infrastructure as Code [IaC]), this is a place for you.
 
-THere are many ways to deploy an Django application on the GCP:
+There are many ways to deploy a Django application on the GCP:
 
- - App Engine:
- - Cloud Run (with GCS storage) (blog post)
- - Kubernetes (maybe covered here, we will see) (blog post)
+ - App Engine
+ - Cloud Run (with GCS storage)
+ - Kubernetes (maybe covered here, we will see)
  - Compute Engine
 
-Most of them are covered in [GCP documentation](https://cloud.google.com/python/django/) which is quite good im my opinion, however if you are not familiar with the cloud all these services and operations may seem confusing (and reduntant).
-Django apps in mentioned tutorials are almost the same, they have changes dependent on the service type on which they were supossed to be running of course, however some changes are not related.
-Moreover, I found some of these tutorials and app may contain some tiny bugs.
+Most of them are covered in [GCP documentation](https://cloud.google.com/python/django/) which is quite good in my opinion, however if you are not familiar with the Cloud, all these services and operations may seem confusing (and redundant).
+Django apps mentioned in these tutorials are almost the same, they have changes dependent on the service type on which they were supposed to be running of course, nevertheless some changes are not related.
+Moreover, I found some of the tutorials and apps to contain tiny bugs.
 
-So what I have done here is an simple Django application where all changes which are specific to given GCP services are grouped and could be found in the possible least number of places for ease of analysis.
-Additionaly infrastructure is wrapped in the Terraform (IaC tool) which allows you easily create (and destroy) all necessary resources.
-Process of deploying application itself is not handled by Terraform ([Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)) but it is wrapped in the Google Cloud Build [GCB] pipelines,
-separate for each service and easy to follow. Inheritance between GCB pipelines is not possible, hence they have a lot of in common but diff analysis between them should not be a problem for you.
-For GCB purpose I wraped up app in Docker, even App Engine does not require it, but it was the easiest way to provide proxy connections to Cloud SQL.
+So what I have done here is a simple Django application (based on Django project tutorial:  [Writing your first Django app](https://docs.djangoproject.com/en/3.2/intro/tutorial01/), where all changes which are specific to given GCP services are grouped and can be found in the possible fewest number of places for an easy analysis.
+Additionally, infrastructure is wrapped in the Terraform (IaC tool) which allows you to easily create (and destroy) all necessary resources.
+The process of deploying application itself is not handled by Terraform ([Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)), but it is wrapped in the easy to follow Google Cloud Build [GCB] pipelines,
+separate for each service. Due to the fact that inheritance between GCB pipelines is not possible, they have a lot in common but analysis of differences between them should not be a problem for you.
+For GCB purposes I wrapped the app in Docker, even though the App Engine does not require it, but it was the easiest way to provide proxy connection to Cloud SQL database ([app-engine-exec-wrapper,](https://github.com/GoogleCloudPlatform/ruby-docker/tree/master/app-engine-exec-wrapper)).
 
-Hopefully such condensed project may help you to learn how interconnected Cloud services may be used along with Python project so some ideas could be picked in the future.
+Hopefully such a condensed project may help you learn how GCP services may be used along with Python projects, so some ideas could be picked up in the future.
 
 
 ## Prerequisites
 
-Topics with which you should be familiar with since they will be not covered:
+Topics you should be familiar with since they will be not covered:
 
  - Python and Django
- - Cloud - basic cloud conecpts in general
- - Google Cloud Platform: basics of the services, usage of `gcloud` CLI, managing billing, documentation about [Django on GCP](GCP documentation](https://cloud.google.com/python/django/)
- - Terraform - basics of usage, see my tutorial on Medium: [Terraform Tutorial: Introduction to Infrastructure as Code](https://tobiaszkedzierski.medium.com/terraform-tutorial-introduction-to-infrastructure-as-code-dccec643bfdb)
+ - Cloud - basic cloud concepts in general
+ - Google Cloud Platform: basics of the services, use of `gcloud` CLI, managing billing, documentation about [Django on GCP](GCP documentation](https://cloud.google.com/python/django/)
+ - Terraform -  basic use. You can also check my tutorial on Medium: [Terraform Tutorial: Introduction to Infrastructure as Code](https://tobiaszkedzierski.medium.com/terraform-tutorial-introduction-to-infrastructure-as-code-dccec643bfdb)
 
-What you should  prepare:
- - Google Cloud Project - create fresh GCP project or use existing (however it may cause Terraform exceptions)
- - [`gcloud`](https://cloud.google.com/sdk/gcloud) - install GCP cli and authorize it with proper GCP Projectd
- - [Terraform](https://www.terraform.io/downloads.html) - install latest version
+What you should prepare:
+ - Google Cloud Project - create a fresh GCP project or use an existing one (however it may cause Terraform exceptions)
+ - [`gcloud`](https://cloud.google.com/sdk/gcloud) - install GCP cli and authorize it with a relevant GCP Project
+ - [Terraform](https://www.terraform.io/downloads.html) - install the latest version
  - Python [optionally] - Python 3.9 in virtual environment if you want to run Django app locally
 
 
