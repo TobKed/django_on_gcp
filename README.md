@@ -1,22 +1,24 @@
+# Django application on Google Cloud Platform.
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [How to deploy a Django application on Google Cloud Platform.](#how-to-deploy-a-django-application-on-google-cloud-platform)
-  - [Introduction](#introduction)
-  - [Prerequisites](#prerequisites)
-  - [Instructions](#instructions)
-    - [1. Variables specific for your GCP project](#1-variables-specific-for-your-gcp-project)
-    - [2. Set up infrastructure](#2-set-up-infrastructure)
-    - [3. Deploy app](#3-deploy-app)
-  - [Warnings!](#warnings)
-  - [Links](#links)
-  - [TODO](#todo)
+- [Introduction](#introduction)
+- [App Engine](#app-engine)
+- [Cloud Run](#cloud-run)
+- [Prerequisites](#prerequisites)
+- [Instructions](#instructions)
+  - [1. Types of deployments](#1-types-of-deployments)
+  - [2. Variables specific for your GCP project](#2-variables-specific-for-your-gcp-project)
+  - [3. Set up infrastructure](#3-set-up-infrastructure)
+  - [4. Deploy app](#4-deploy-app)
+  - [5. Destroy infrastructure](#5-destroy-infrastructure)
+- [Warnings!](#warnings)
+- [Links](#links)
+- [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-
-# How to deploy a Django application on Google Cloud Platform.
 
 
 ## Introduction
@@ -27,10 +29,10 @@ If you want to learn how to run a simple, basic Django app in the Google Cloud P
 
 There are many ways to deploy a Django application on the GCP:
 
- - App Engine
- - Cloud Run (with GCS storage)
- - Kubernetes (maybe covered here, we will see)
- - Compute Engine
+ - App Engine (covered here)
+ - Cloud Run (covered here)
+ - Kubernetes (TODO)
+ - Compute Engine (not covered here)
 
 Most of them are covered in [GCP documentation](https://cloud.google.com/python/django/) which is quite good in my opinion, however if you are not familiar with the Cloud, all these services and operations may seem confusing (and redundant).
 Django apps mentioned in these tutorials are almost the same, they have changes dependent on the service type on which they were supposed to be running of course, nevertheless some changes are not related.
@@ -44,6 +46,21 @@ For GCB purposes I wrapped the app in Docker, even though the App Engine does no
 
 Hopefully such a condensed project may help you learn how GCP services may be used along with Python projects, so some ideas could be picked up in the future.
 
+## App Engine
+
+> App Engine is a fully managed, serverless platform for developing and hosting web applications at scale. You can choose from several popular languages, libraries, and frameworks to develop your apps, and then let App Engine take care of provisioning servers and scaling your app instances based on demand.
+>
+> -- [App Engine documentation](https://cloud.google.com/appengine/docs)
+
+![App Engine](./docs/app_engine.png)
+
+## Cloud Run
+
+> Cloud Run is a managed compute platform that enables you to run containers that are invocable via requests or events. Cloud Run is serverless: it abstracts away all infrastructure management, so you can focus on what matters most — building great applications.
+>
+> -- [Cloud Run documentation]()
+
+![Cloud RUn](./docs/cloud_run.png)
 
 ## Prerequisites
 
@@ -51,8 +68,8 @@ Topics you should be familiar with since they will be not covered:
 
  - Python and Django
  - Cloud - basic cloud concepts in general
- - Google Cloud Platform: basics of the services, use of `gcloud` CLI, managing billing, documentation about [Django on GCP](GCP documentation](https://cloud.google.com/python/django/)
- - Terraform -  basic use. You can also check my tutorial on Medium: [Terraform Tutorial: Introduction to Infrastructure as Code](https://tobiaszkedzierski.medium.com/terraform-tutorial-introduction-to-infrastructure-as-code-dccec643bfdb)
+ - Google Cloud Platform: basics of the services, use of `gcloud` CLI, managing billing, documentation about [Django on GCP (GCP documentation)](https://cloud.google.com/python/django/)
+ - Terraform -  basic use and concepts. You can also check my tutorial on Medium: [Terraform Tutorial: Introduction to Infrastructure as Code](https://tobiaszkedzierski.medium.com/terraform-tutorial-introduction-to-infrastructure-as-code-dccec643bfdb)
 
 What you should prepare:
  - Google Cloud Project - create a fresh GCP project or use an existing one (however it may cause Terraform exceptions)
@@ -63,71 +80,84 @@ What you should prepare:
 
 ## Instructions
 
-### 1. Variables specific for your GCP project
+Most of the terminal commands stated here are executed within Terraform environment folder relevant to chosen solution.
 
-1. Shell environmental variables
+### 1. Types of deployments
 
-Set environmental variables.
-Some values you have to know by hard, like `PROJECT_ID`.
-Other you can generate on fly, like `DJANGO_SECRET_KEY` however remember to keep them somewhere (see next step).
-They will be used to provide input variables for terraform and for `gcloud` commands.
+| Terraform environment folder           | Description                                             | GCS | `CLOUD_BUILD_FILE` variable             | Config file                  | Used Terraform module                                                               |
+|----------------------------------------|---------------------------------------------------------|-----|-----------------------------------------|------------------------------|-------------------------------------------------------------------------------------|
+| `terraform/envs/gae_standard`          | App Engine Standard environment **without** GCS storage | ❌   | `cloudbuild/gae_standard.yaml`          | `gae_standard.yaml`          | [`terraform/modules/django_gae_standard`](./terraform/modules/django_gae_standard) |
+| `terraform/envs/gae_standard_with_gcs` | App Engine Standard environment                         | ✅   | `cloudbuild/gae_standard_with_gcs.yaml` | `gae_standard_with_gcs.yaml` | [`terraform/modules/django_gae_standard`](./terraform/modules/django_gae_standard) |
+| `terraform/envs/gae_flexible`          | App Engine Flexible environment                         | ✅   | `cloudbuild/gae_flexible.yaml`          | `gae_flexible.yaml`          | [`terraform/modules/django_gae_flexible`](./terraform/modules/django_gae_flexible) |
+| `terraform/envs/cloud_run`             | Cloud Run                                               | ✅   | `cloudbuild/cloud_run.yaml`             | -                            | [`terraform/modules/django_cloud_run`](./terraform/modules/django_cloud_run)       |
 
-```bash
-export PROJECT_ID=django-cloud-tf-test-001
-export REGION=europe-central2
-export ZONE=europe-central2-a
-export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db-instance"
-export SQL_DATABASE_NAME="${PROJECT_ID}-db"
-export SERVICE_NAME=polls-service
-export SERVICE_ACCOUNT_NAME=polls-service-account  # for cloud run
-export SERVICE_ACCOUNT="${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"   # for cloud run
+### 2. Variables specific for your GCP project
 
-export DJANGO_SECRET_KEY=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 50 | head -n1)
-export SQL_USER=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
-export SQL_PASSWORD=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
-```
+ 1. Shell environmental variables
 
-1. `gcloud` config project
+    Set environmental variables.
+    Some values you have to know by hard, like `PROJECT_ID`.
+    Other you can generate on fly, like `DJANGO_SECRET_KEY` however remember to keep them somewhere (see next step).
+    They will be used to provide input variables for terraform and for `gcloud` commands.
 
-```bash
-gcloud config set project $PROJECT_ID
-```
+    ```bash
+    export PROJECT_ID=django-cloud-tf-test-001
+    export REGION=europe-central2
+    export ZONE=europe-central2-a
+    export SQL_DATABASE_INSTANCE_NAME="${PROJECT_ID}-db-instance"
+    export SQL_DATABASE_NAME="${PROJECT_ID}-db"
+    export SERVICE_NAME=polls-service
+    export SERVICE_ACCOUNT_NAME=polls-service-account  # for cloud run
+    export SERVICE_ACCOUNT="${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"   # for cloud run
 
-2. Terraform variables
+    export DJANGO_SECRET_KEY=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 50 | head -n1)
+    export SQL_USER=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
+    export SQL_PASSWORD=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
+    ```
 
-Terraform can read variables from environment variables.
-Naming convention is `TF_VAR_variable_name`.
+ 2. `gcloud` config project
 
-```bash
-export TF_VAR_project_id=$PROJECT_ID
-export TF_VAR_region=$REGION
-export TF_VAR_zone=$ZONE
-export TF_VAR_django_secret_key=$DJANGO_SECRET_KEY
-export TF_VAR_sql_database_instance_name=$SQL_DATABASE_INSTANCE_NAME
-export TF_VAR_sql_database_name=$SQL_DATABASE_NAME
-export TF_VAR_sql_user=$SQL_USER
-export TF_VAR_sql_password=$SQL_PASSWORD
-export TF_VAR_cloud_run_service_account_name=$SERVICE_ACCOUNT_NAME
-```
+    ```bash
+    gcloud config set project $PROJECT_ID
+    ```
 
-Another way to provide input variables is `.tfvars` file.
-With variables set in previous such file could be generated with following command:
+ 3. Terraform variables
 
-```bash
-cat << EOF > terraform.tfvars
-project_id                     = "$PROJECT_ID"
-region                         = "$REGION"
-zone                           = "$ZONE"
-django_secret_key              = "$DJANGO_SECRET_KEY"
-sql_database_instance_name     = "$SQL_DATABASE_INSTANCE_NAME"
-sql_database_name              = "$SQL_DATABASE_NAME"
-sql_user                       = "$SQL_USER"
-sql_password                   = "$SQL_PASSWORD"
-cloud_run_service_account_name = "$SERVICE_ACCOUNT_NAME"
-EOF
-```
+    Terraform can read variables from environment variables.
+    Naming convention is `TF_VAR_variable_name`.
 
-### 2. Set up infrastructure
+    ```bash
+    export TF_VAR_project_id=$PROJECT_ID
+    export TF_VAR_region=$REGION
+    export TF_VAR_zone=$ZONE
+    export TF_VAR_django_secret_key=$DJANGO_SECRET_KEY
+    export TF_VAR_sql_database_instance_name=$SQL_DATABASE_INSTANCE_NAME
+    export TF_VAR_sql_database_name=$SQL_DATABASE_NAME
+    export TF_VAR_sql_user=$SQL_USER
+    export TF_VAR_sql_password=$SQL_PASSWORD
+    export TF_VAR_cloud_run_service_account_name=$SERVICE_ACCOUNT_NAME
+    ```
+
+    Another way to provide input variables is `.tfvars` file.
+    With variables set in previous such file could be generated with following command:
+
+    ```bash
+    cat << EOF > terraform.tfvars
+    project_id                     = "$PROJECT_ID"
+    region                         = "$REGION"
+    zone                           = "$ZONE"
+    django_secret_key              = "$DJANGO_SECRET_KEY"
+    sql_database_instance_name     = "$SQL_DATABASE_INSTANCE_NAME"
+    sql_database_name              = "$SQL_DATABASE_NAME"
+    sql_user                       = "$SQL_USER"
+    sql_password                   = "$SQL_PASSWORD"
+    cloud_run_service_account_name = "$SERVICE_ACCOUNT_NAME"
+    EOF
+    ```
+
+### 3. Set up infrastructure
+
+Set up infrastructure with basic Terraform commands:
 
 ```bash
 terraform init
@@ -137,105 +167,86 @@ terraform apply
 
 Known issues:
 
- - 13 years old google issue [No way to delete an application ](https://issuetracker.google.com/issues/35874988)
+ - [No way to delete an application ](https://issuetracker.google.com/issues/35874988) - 13 years old google issue:
 
-    ```Error: Error creating App Engine application: googleapi: Error 409: This application already exists and cannot be re-created., alreadyExist```
+   ```Error: Error creating App Engine application: googleapi: Error 409: This application already exists and cannot be re-created., alreadyExist```
 
- - random null for `data.google_project.project.number`, https://github.com/hashicorp/terraform-provider-google/issues/10587#issuecomment-984589651:
+    After destroying infrastructure and applying again this error will occur since previous App Engine app was (silently) not deleted.
+    It could be fixed by importing existing App Enginge into terraform state (see [Terraform - import](https://www.terraform.io/docs/cli/import/index.html)))
+
+ - random null for `data.google_project.project.number` ([my comment on `hashicorp/terraform-provider-google - data.google_project.project.project_id sometimes null` issue](https://github.com/hashicorp/terraform-provider-google/issues/10587#issuecomment-984589651)):
 
     ```The expression result is null. Cannot include a null value in a string template.```
 
-### 3. Deploy app
+    Only solution here is only to retry until it works and waiting until new version of `hashicorp/terraform-provider-google` will not have this issue.
+
+### 4. Deploy app
 
 In my opinion when possible *Terraform* should be used to provide infrastructure only and
 deployment of the application itself should be handled separately.
 
 [Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)
 
-1. Set GCB pipeline
+ 1. Set GCB pipeline relevant to the chosen deployment
 
- - App Engine standard environment
-
-    ```bash
-    export CLOUD_BUILD_FILE=cloudbuild/gae_app_standard_deploy.yaml
-    ```
-
- - App Engine standard environment with Google Cloud Storage
+    Substitute the path with the value taken from [Introduction](#introduction) table
 
     ```bash
-    export CLOUD_BUILD_FILE=cloudbuild/gae_app_standard_with_gcs_deploy.yaml
+    export CLOUD_BUILD_FILE=<put value here>
     ```
 
- - App Engine flexible environment (with Google Cloud Storage)
+ 2. Deploy
 
-    ```bash
-    export CLOUD_BUILD_FILE=cloudbuild/gae_app_flexible.yaml
-    ```
+    Commands should be run from root repository directory (see `CLOUD_BUILD_FILE` variable).
 
- - Cloud Run
+    - App Engine
 
-    ```bash
-    export CLOUD_BUILD_FILE=cloudbuild/cloud_run.yaml
-    ```
+      Run GCB pipeline:
 
- - Kubernetes
+       ```bash
+       gcloud builds submit  \
+         --project $PROJECT_ID \
+         --config $CLOUD_BUILD_FILE \
+         --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
+       ```
 
-    ```bash
-    export CLOUD_BUILD_FILE=cloudbuild/gke.yaml
-    ```
+       Display GAE application url:
 
-2. Deploy
+       ```bash
+       gcloud app describe --format "value(defaultHostname)"
+       ```
 
-    Path in `CLOUD_BUILD_FILE` is intended bo being run from root repository directory.
+       Known issues:
 
- - App Engine
+      - error during last step, terraform google provider issue, wait a little and retry
 
-    ```bash
-    gcloud builds submit  \
-        --project $PROJECT_ID \
-        --config $CLOUD_BUILD_FILE \
-        --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
-    ```
+          ```bash
+          Step #5 - "deploy app": ERROR: (gcloud.app.deploy) NOT_FOUND: Unable to retrieve P4SA: [service-123456789101@gcp-gae-service.iam.gserviceaccount.com] from GAIA. Could be GAIA propagation delay or request from deleted apps.
+          Finished Step #5 - "deploy app"
+          ```
 
-    Display GAE application url:
+    - Cloud Run
 
-    ```bash
-    gcloud app describe --format "value(defaultHostname)"
-    ```
+       Run GCB pipeline:
 
-    Known issues:
+       ```bash
+       gcloud builds submit  \
+         --project $PROJECT_ID \
+         --config $CLOUD_BUILD_FILE \
+         --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME,_SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME
+       ```
 
-   - error during last step, terraform google provider issue, wait a little and retry
+       Display Cloud Run application url:
 
-     `Step #5 - "deploy app": ERROR: (gcloud.app.deploy) NOT_FOUND: Unable to retrieve P4SA: [service-123456789101@gcp-gae-service.iam.gserviceaccount.com] from GAIA. Could be GAIA propagation delay or request from deleted apps.
-Finished Step #5 - "deploy app"`
+       ```bash
+       gcloud run services list --filter SERVICE:$SERVICE_NAME --format "value(status.address.url)"
+       ```
 
-
- - Cloud Run
-
-    ```bash
-    export CLOUD_BUILD_FILE=cloudbuild/cloud_run.yaml
-    ```
-
-    ```bash
-    gcloud builds submit  \
-        --project $PROJECT_ID \
-        --config $CLOUD_BUILD_FILE \
-        --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME,_SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME
-    ```
-
-    Display Cloud Run application url:
-
-    ```bash
-    gcloud run services list --filter SERVICE:$SERVICE_NAME --format "value(status.address.url)"
-    ```
-
-3. Destroy infrastructure
+### 5. Destroy infrastructure
 
 ```shell
 terraform destroy
 ```
-
 
 ## Warnings!
 
@@ -249,5 +260,7 @@ terraform destroy
 
 ## TODO
 
- - [ ] migration with superadmin creation
- - [ ] autogenerate cloud run service account based on the service name, fewer envs, simpler !
+ - [ ] command with superadmin creation
+ - [ ] add secrets to the graphs
+ - [ ] extend services descriptions
+ - [ ] command to import exising App Engine app into Terraform state

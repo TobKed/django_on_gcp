@@ -46,7 +46,7 @@ steps:
     args: ["app",  "describe", "--format", "value(defaultHostname)"]
 
 substitutions:
-  _GAE_FILE: gae_app_standard.yaml
+  _GAE_FILE: gae_standard.yaml
   _INSTANCE_NAME: db-instance
   _REGION: us-central1
   _SERVICE_NAME: polls-service

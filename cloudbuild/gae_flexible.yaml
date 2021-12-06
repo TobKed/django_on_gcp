@@ -46,6 +46,29 @@ steps:
         "--noinput"
       ]
 
+  - id: "modify configuration file"
+    name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: 'bash'
+    args:
+      - "-c"
+      - |
+          sed -i "s/PROJECT_ID/$PROJECT_ID/g" ${_GAE_FILE}
+          sed -i "s/REGION/${_REGION}/g" ${_GAE_FILE}
+          sed -i "s/INSTANCE_NAME/${_INSTANCE_NAME}/g" ${_GAE_FILE}
+          cat ${_GAE_FILE}
+
+  # Removing Dockerfile to avoid error:
+  #   ERROR: (gcloud.app.deploy) There is a Dockerfile in the current directory, and the runtime field in
+  #   /workspace/gae_flexible.yaml is currently set to [runtime: python].
+  #   To use your Dockerfile to build a custom runtime, set the runtime field to [runtime: custom].
+  #   To continue using the [python] runtime, please remove the Dockerfile from this directory.
+  #
+  # more info about custom runtimes at: https://cloud.google.com/appengine/docs/flexible/custom-runtimes
+  - id: "delete Dockerfile"
+    name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: 'bash'
+    args: ["-c", "rm Dockerfile"]
+
   - id: "deploy app"
     name: "gcr.io/cloud-builders/gcloud"
     args: ["app", "deploy", "${_GAE_FILE}", "--quiet"]
@@ -55,7 +78,7 @@ steps:
     args: ["app",  "describe", "--format", "value(defaultHostname)"]
 
 substitutions:
-  _GAE_FILE: gae_app_standard_with_gcs.yaml
+  _GAE_FILE: gae_flexible.yaml
   _INSTANCE_NAME: db-instance
   _REGION: us-central1
   _SERVICE_NAME: polls-service
