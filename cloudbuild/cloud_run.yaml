@@ -68,7 +68,7 @@ steps:
 
   - id: "get app url"
     name: "gcr.io/cloud-builders/gcloud"
-    args: ["run", "services",  "list", "--filter", " ERVICE:$${_SERVICE_NAME}", "--format", "value(status.address.url)"]
+    args: ["run", "services",  "list", "--filter", "SERVICE:${_SERVICE_NAME}", "--format", "value(status.address.url)"]
 
 substitutions:
   _INSTANCE_NAME: db-instance
