@@ -80,7 +80,7 @@ What you should prepare:
 
 ## Instructions
 
-Most of the terminal commands stated here are executed within Terraform environment folder relevant to chosen solution.
+Most of the terminal commands stated here are executed within the Terraform environment folder relevant to chosen solution.
 
 ### 1. Types of deployments
 
@@ -97,7 +97,7 @@ Most of the terminal commands stated here are executed within Terraform environm
 
     Set environmental variables.
     Some values you have to know by hard, like `PROJECT_ID`.
-    Other you can generate on fly, like `DJANGO_SECRET_KEY` however remember to keep them somewhere (see next step).
+    Others you can generate on the fly, like `DJANGO_SECRET_KEY` however remember to keep them somewhere (see next step).
     They will be used to provide input variables for terraform and for `gcloud` commands.
 
     ```bash
@@ -171,14 +171,14 @@ Known issues:
 
    ```Error: Error creating App Engine application: googleapi: Error 409: This application already exists and cannot be re-created., alreadyExist```
 
-    After destroying infrastructure and applying again this error will occur since previous App Engine app was (silently) not deleted.
+    After destroying infrastructure and applying again this error will occur since the previous App Engine app was (silently) not deleted.
     It could be fixed by importing existing App Enginge into terraform state (see [Terraform - import](https://www.terraform.io/docs/cli/import/index.html)))
 
  - random null for `data.google_project.project.number` ([my comment on `hashicorp/terraform-provider-google - data.google_project.project.project_id sometimes null` issue](https://github.com/hashicorp/terraform-provider-google/issues/10587#issuecomment-984589651)):
 
     ```The expression result is null. Cannot include a null value in a string template.```
 
-    Only solution here is only to retry until it works and waiting until new version of `hashicorp/terraform-provider-google` will not have this issue.
+    The only solution here is to retry until it works and wait until the new version of `hashicorp/terraform-provider-google` will not have this issue.
 
 ### 4. Deploy app
 
@@ -197,7 +197,7 @@ deployment of the application itself should be handled separately.
 
  2. Deploy
 
-    Commands should be run from root repository directory (see `CLOUD_BUILD_FILE` variable).
+    Commands should be run from the root repository directory (see `CLOUD_BUILD_FILE` variable).
 
     - App Engine
 
