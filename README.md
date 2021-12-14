@@ -14,9 +14,9 @@
   - [3. Set up infrastructure](#3-set-up-infrastructure)
   - [4. Deploy app](#4-deploy-app)
   - [5. Destroy infrastructure](#5-destroy-infrastructure)
+  - [Extra: Create Django superuser](#extra-create-django-superuser)
 - [Warnings!](#warnings)
 - [Links](#links)
-- [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -204,7 +204,7 @@ deployment of the application itself should be handled separately.
       Run GCB pipeline:
 
        ```bash
-       gcloud builds submit  \
+       gcloud builds submit \
          --project $PROJECT_ID \
          --config $CLOUD_BUILD_FILE \
          --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
@@ -230,7 +230,7 @@ deployment of the application itself should be handled separately.
        Run GCB pipeline:
 
        ```bash
-       gcloud builds submit  \
+       gcloud builds submit \
          --project $PROJECT_ID \
          --config $CLOUD_BUILD_FILE \
          --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME,_SERVICE_ACCOUNT_NAME=$SERVICE_ACCOUNT_NAME
@@ -248,19 +248,92 @@ deployment of the application itself should be handled separately.
 terraform destroy
 ```
 
+### Extra: Create Django superuser
+
+Superuser credentials are intended to be stored as Google Secret.
+Default name for the secret is `superuser_credentials`.
+These credentials are used by `cloudbuild/create_superuser.yaml` GCB pipeline for relevant superuser creation.
+
+Easy way to quickly create and destroy Google Secrets is `gcloud` cli.
+Optionally resources could be created in TF as well,
+however if superuser credentials will be needed only once it does not seem to be the best idea to store it as IaC.
+
+ 1. Create secret
+
+    ```shell
+    export SECRET_NAME="superuser_credentials"
+    export SUPERUSER_USERNAME="super_username"
+    export SUPERUSER_PASSWORD="super_password"
+
+    gcloud secrets create $SECRET_NAME --replication-policy="automatic"
+    echo -n "USERNAME=${SUPERUSER_USERNAME}\nPASSWORD=${SUPERUSER_PASSWORD}\n" | \
+      gcloud secrets versions add $SECRET_NAME --data-file=-
+    ```
+
+    Optionally you can read secret to verify is it correct:
+
+    ```shell
+    gcloud secrets versions access latest --secret=$SECRET_NAME
+    ```
+
+ 2. Run GCB pipeline which creates Django superuser
+
+    ```shell
+    gcloud builds submit \
+      --project $PROJECT_ID \
+      --config cloudbuild/create_superuser.yaml \
+      --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
+    ```
+
+ 3. Delete secret:
+
+    ```shell
+    gcloud secrets delete $SECRET_NAME
+    ```
+
+Optionally create Secret as Terraform resource (credentials provided as variables):
+
+```hcl
+variable "django_superuser_username" {
+  description = "Django superuser username"
+  type        = string
+}
+
+variable "django_superuser_password" {
+  description = "Django superuser password"
+  type        = string
+}
+
+resource "google_secret_manager_secret" "superuser_credentials" {
+  secret_id  = var.django_settings_name
+  depends_on = [google_project_service.gcp_services]
+  labels = {
+    label = "superuser_credentials"
+  }
+
+  replication {
+    automatic = true
+  }
+}
+
+resource "google_secret_manager_secret_version" "superuser_credentials_version" {
+  secret = google_secret_manager_secret.django_settings.id
+
+  secret_data = <<-EOF
+  USERNAME=${var.django_superuser_username}
+  PASSWORD=${var.django_superuser_password}
+  EOF
+
+  depends_on = [module.django_cloud_run]  # relevant module for your case
+}
+```
+
 ## Warnings!
 
- 1. Remember to edit `.gcloudignore`. It excludes all files except implicitly added.
+ 1. Remember to edit `.gcloudignore` and `.dockerignore`. It excludes all files except implicitly added.
 
 ## Links
 
  - https://cloud.google.com/python/django/appengine
  - https://cloud.google.com/python/django/flexible-environment
  - https://cloud.google.com/python/django/run
-
-## TODO
-
- - [ ] command with superadmin creation
- - [ ] add secrets to the graphs
- - [ ] extend services descriptions
- - [ ] command to import exising App Engine app into Terraform state

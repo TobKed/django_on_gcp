@@ -74,7 +74,10 @@ resource "google_project_iam_binding" "cloudsql_admin" {
     "serviceAccount:${local.google_cloud_build_default_service_account}"
   ]
 
-  depends_on = [google_service_account.cloud_run_service_account]
+  depends_on = [
+    google_service_account.cloud_run_service_account,
+    google_project_service.gcp_services
+  ]
 }
 
 resource "google_service_account_iam_binding" "admin-account-iam" {
