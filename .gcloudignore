@@ -3,6 +3,7 @@
 *
 
 ## Except files we want
+!.dockerignore
 !mysite/**
 !polls/**
 !Dockerfile

@@ -1,0 +1,10 @@
+#!include:.gitignore
+**
+
+# Allow files and directories
+!.dockerignore
+!mysite/**
+!polls/**
+!main.py
+!manage.py
+!requirements.txt
