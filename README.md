@@ -172,7 +172,21 @@ Known issues:
    ```Error: Error creating App Engine application: googleapi: Error 409: This application already exists and cannot be re-created., alreadyExist```
 
     After destroying infrastructure and applying again this error will occur since the previous App Engine app was (silently) not deleted.
-    It could be fixed by importing existing App Enginge into terraform state (see [Terraform - import](https://www.terraform.io/docs/cli/import/index.html)))
+    It could be fixed by importing existing App Engine into terraform state:
+
+    ```shell
+    terraform import module.$TERRAFORM_MODULE_NAME.google_app_engine_application.app "${PROJECT_ID}"
+    ```
+
+    Replace $TERRAFORM_MODULE_NAME with relevant module name (see `main.tf` in env of your choice).
+
+    Example for `django_gae_standard`:
+
+    ```shell
+    terraform import module.django_gae_standard.google_app_engine_application.app "${PROJECT_ID}"
+    ```
+
+    More about importing: [Terraform - import](https://www.terraform.io/docs/cli/import/index.html)
 
  - random null for `data.google_project.project.number` ([my comment on `hashicorp/terraform-provider-google - data.google_project.project.project_id sometimes null` issue](https://github.com/hashicorp/terraform-provider-google/issues/10587#issuecomment-984589651)):
 
