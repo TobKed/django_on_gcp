@@ -268,11 +268,11 @@ Superuser credentials are intended to be stored as Google Secret.
 Default name for the secret is `superuser_credentials`.
 These credentials are used by `cloudbuild/create_superuser.yaml` GCB pipeline for relevant superuser creation.
 
-Easy way to quickly create and destroy Google Secrets is `gcloud` cli.
-Optionally resources could be created in TF as well,
-however if superuser credentials will be needed only once it does not seem to be the best idea to store it as IaC.
+An easy way to quickly create and destroy Google Secrets is to use the `gcloud` cli.
+Optionally, resources could be created in TF as well, however if superuser credentials are needed only once,
+it does not seem to be the best idea to store it as IaC.
 
- 1. Create secret
+ 1. Create the secret:
 
     ```shell
     export SECRET_NAME="superuser_credentials"
@@ -284,13 +284,13 @@ however if superuser credentials will be needed only once it does not seem to be
       gcloud secrets versions add $SECRET_NAME --data-file=-
     ```
 
-    Optionally you can read secret to verify is it correct:
+    Optionally, you can read the secret to verify if it is correct:
 
     ```shell
     gcloud secrets versions access latest --secret=$SECRET_NAME
     ```
 
- 2. Run GCB pipeline which creates Django superuser
+ 2. Run GCB pipeline which creates Django superuser:
 
     ```shell
     gcloud builds submit \
@@ -299,7 +299,7 @@ however if superuser credentials will be needed only once it does not seem to be
       --substitutions _INSTANCE_NAME=$SQL_DATABASE_INSTANCE_NAME,_REGION=$REGION,_SERVICE_NAME=$SERVICE_NAME
     ```
 
- 3. Delete secret:
+ 3. Delete the secret:
 
     ```shell
     gcloud secrets delete $SECRET_NAME
