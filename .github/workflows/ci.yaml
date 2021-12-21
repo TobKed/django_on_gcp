@@ -1,0 +1,25 @@
+name: pre-commit
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@v2
+    - name: 'install terraform-docs'
+      run: >
+        curl -L
+        "$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest
+        | grep -o -E -m 1 "https://.+?-linux-amd64.tar.gz")"
+        > terraform-docs.tgz
+        && tar -xzf terraform-docs.tgz terraform-docs
+        && chmod +x terraform-docs
+        && sudo mv terraform-docs /usr/bin/
+    - uses: pre-commit/action@v2.0.3

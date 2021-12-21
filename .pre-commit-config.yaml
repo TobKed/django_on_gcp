@@ -12,7 +12,7 @@ repos:
         args: ['--allow-multiple-documents']
 
   - repo: https://github.com/psf/black
-    rev: 21.10b0
+    rev: 21.12b0
     hooks:
       - id: black
 
@@ -29,10 +29,11 @@ repos:
         additional_dependencies: [flake8-isort]
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.56.0
+    rev: v1.62.1
     hooks:
       - id: terraform_fmt
       - id: terraform_docs
+
   - repo: https://github.com/thlorenz/doctoc.git
     rev: v2.1.0
     hooks:
