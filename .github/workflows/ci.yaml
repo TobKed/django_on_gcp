@@ -13,4 +13,12 @@ jobs:
       with:
         persist-credentials: false
     - uses: actions/setup-python@v2
+    - name: 'install terraform-docs'
+      run: >
+        curl -L
+        "$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest
+        | grep -o -E -m 1 "https://.+?-linux-amd64.tar.gz")"
+        > terraform-docs.tgz
+        && tar -xzf terraform-docs.tgz terraform-docs
+        && chmod +x terraform-docs
     - uses: pre-commit/action@v2.0.3
