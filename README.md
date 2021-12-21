@@ -114,7 +114,7 @@ I will describe each of them.
     Otherwise, if `GOOGLE_CLOUD_PROJECT` environmental variables existence check is positive client of Google Secrets
     fetches secret (with default name `django_settings`) and extends environmental variables as well.
 
-    If there no `.env` file and no `GOOGLE_CLOUD_PROJECT` exception is raised and app will not be able to start.
+    If there no `.env` file and no `GOOGLE_CLOUD_PROJECT` variable, then exception is raised and app will not be able to start.
 
     Secret consists of three variables:
 
