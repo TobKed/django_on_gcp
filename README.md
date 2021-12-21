@@ -160,6 +160,8 @@ Most of the terminal commands stated here are executed within the Terraform envi
     EOF
     ```
 
+    More about variables: [Input Variables](https://www.terraform.io/language/values/variables) and [Variable Definition Precedence](https://www.terraform.io/language/values/variables#variable-definition-precedence)
+
 ### 3. Set up infrastructure
 
 Set up infrastructure with basic Terraform commands:
@@ -183,7 +185,7 @@ Known issues:
     terraform import module.$TERRAFORM_MODULE_NAME.google_app_engine_application.app "${PROJECT_ID}"
     ```
 
-    Replace $TERRAFORM_MODULE_NAME with relevant module name (see `main.tf` in env of your choice).
+    Replace `$TERRAFORM_MODULE_NAME` with relevant module name (see `main.tf` in env of your choice).
 
     Example for `django_gae_standard`:
 
@@ -201,10 +203,11 @@ Known issues:
 
 ### 4. Deploy app
 
-In my opinion when possible *Terraform* should be used to provide infrastructure only and
-deployment of the application itself should be handled separately.
+In my opinion when possible Terraform should be used to provide infrastructure only and
+deployment of the application itself should be handled separately
+(see [Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987))
 
-[Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)
+I prepared GCB pipelines to handle operation if deploying and/or updating the application.
 
  1. Set GCB pipeline relevant to the chosen deployment
 
@@ -237,7 +240,7 @@ deployment of the application itself should be handled separately.
 
        Known issues:
 
-      - error during last step, terraform google provider issue, wait a little and retry
+      - error during last step, Terraform Google provider issue, wait a little and retry
 
           ```bash
           Step #5 - "deploy app": ERROR: (gcloud.app.deploy) NOT_FOUND: Unable to retrieve P4SA: [service-123456789101@gcp-gae-service.iam.gserviceaccount.com] from GAIA. Could be GAIA propagation delay or request from deleted apps.
@@ -368,7 +371,7 @@ If you want to run the app with connection to the cloud services you have to set
     gcloud auth application-default login
     ```
 
-- Install sql proxy:
+- Install [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy):
 
     ```shell
     # Linux 64-bit
@@ -394,7 +397,7 @@ If you want to run the app with connection to the cloud services you have to set
    echo "DEBUG=True" > .env
    ```
 
-- with connection to cloud services (values will be fetched from Google Secrets):
+- with connection to cloud services (values fetched from Google Secrets):
 
    ```shell
    echo "DEBUG=True" > .env
