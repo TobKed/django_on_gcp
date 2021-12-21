@@ -8,6 +8,7 @@
 - [Google Cloud options](#google-cloud-options)
   - [App Engine](#app-engine)
   - [Cloud Run](#cloud-run)
+- [Django app changes specific for Google Cloud Platform](#django-app-changes-specific-for-google-cloud-platform)
 - [Prerequisites](#prerequisites)
 - [Instructions](#instructions)
   - [1. Types of deployments](#1-types-of-deployments)
@@ -66,6 +67,97 @@ Hopefully such a condensed project may help you learn how GCP services may be us
   > -- [Cloud Run documentation]()
 
   ![Cloud RUn](./docs/cloud_run.png)
+
+## Django app changes specific for Google Cloud Platform
+
+All changes to the fresh Django app are located in `mysite/settings.py` file
+and touch three areas: secrets, database and storage.
+I will describe each of them.
+
+ 1. Secrets
+
+    As it depicted in diagrams from previous point, application connects to the Google Secrets service to obtain some sensitive information.
+
+    ```python
+    import io
+    import os
+    from pathlib import Path
+
+    import environ
+    from google.cloud import secretmanager
+
+    BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+    env = environ.Env(DEBUG=(bool, False))
+    env_file = os.path.join(BASE_DIR, ".env")
+
+
+    if os.path.isfile(env_file):
+        env.read_env(env_file)
+    # Pull secrets from Google Secret Manager
+    elif os.environ.get("GOOGLE_CLOUD_PROJECT", None):
+        project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+        settings_name = os.environ.get("SETTINGS_NAME", "django_settings")
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{project_id}/secrets/{settings_name}/versions/latest"
+        payload = client.access_secret_version(name=name).payload.data.decode("UTF-8")
+        env.read_env(io.StringIO(payload))
+    else:
+        raise Exception("No local .env or GOOGLE_CLOUD_PROJECT detected. No secrets found.")
+    ```
+
+    Environmental variables are handled by [`django-environ`](https://django-environ.readthedocs.io/en/latest/) package.
+
+    If `.env` file exists it is treated as source of secrets (extends environmental variables).
+
+    Otherwise, if `GOOGLE_CLOUD_PROJECT` environmental variables existence check is positive client of Google Secrets
+    fetches secret (with default name `django_settings`) and extends environmental variables as well.
+
+    If there no `.env` file and no `GOOGLE_CLOUD_PROJECT` exception is raised and app will not be able to start.
+
+    Secret consists of three variables:
+
+    - `SECRET_KEY` - which is used to provide cryptographic signing.
+    - `DATABASE_URL` - database connection information and credentials.
+    - `GS_BUCKET_NAME` - [Google Cloud Storage](https://cloud.google.com/storage/) bucket name (may be empty for Google App Engine standard environment).
+
+ 2. Database
+
+    ```python
+    default_sqlite3_database = "sqlite:///" + str(BASE_DIR / "db.sqlite3")
+    DATABASES = {"default": env.db("DATABASE_URL", default=default_sqlite3_database)}
+
+    # If the flag as been set, configure to use proxy
+    if os.getenv("USE_CLOUD_SQL_AUTH_PROXY", None):
+        DATABASES["default"]["HOST"] = "127.0.0.1"
+        DATABASES["default"]["PORT"] = 5432
+    ```
+
+    Database connection string is obtained from `DATABASE_URL` environments variables.
+    Otherwise, the default `sqlite3` database is used.
+
+    Then, if the `USE_CLOUD_SQL_AUTH_PROXY` environmental variables exits,
+    database connection is modified to make it work with [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy).
+
+ 3. Storage
+
+    ```python
+    GS_BUCKET_NAME = env("GS_BUCKET_NAME", default=None)
+
+    STATIC_URL = "/static/"
+
+    if GS_BUCKET_NAME:
+        DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+        STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+        GS_DEFAULT_ACL = "publicRead"
+    else:
+        STATIC_ROOT = "static"
+        STATICFILES_DIRS = []
+    ```
+
+    If `GS_BUCKET_NAME` environmental variables exits,
+    relevant storage backend is set with help of [django-storages](https://github.com/jschneier/django-storages/) package.
 
 ## Prerequisites
 
