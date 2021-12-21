@@ -21,4 +21,5 @@ jobs:
         > terraform-docs.tgz
         && tar -xzf terraform-docs.tgz terraform-docs
         && chmod +x terraform-docs
+        && sudo mv terraform-docs /usr/bin/
     - uses: pre-commit/action@v2.0.3
