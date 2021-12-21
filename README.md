@@ -207,7 +207,7 @@ In my opinion when possible Terraform should be used to provide infrastructure o
 deployment of the application itself should be handled separately
 (see [Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987))
 
-I prepared GCB pipelines to handle operation if deploying and/or updating the application.
+GCB pipelines handle operation of deploying and/or updating the application.
 
  1. Set GCB pipeline relevant to the chosen deployment
 
