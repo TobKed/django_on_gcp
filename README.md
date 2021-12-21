@@ -51,21 +51,21 @@ Hopefully such a condensed project may help you learn how GCP services may be us
 
 ## Google Cloud options
 
-  ### App Engine
+### App Engine
 
-    > App Engine is a fully managed, serverless platform for developing and hosting web applications at scale. You can choose from several popular languages, libraries, and frameworks to develop your apps, and then let App Engine take care of provisioning servers and scaling your app instances based on demand.
-    >
-    > -- [App Engine documentation](https://cloud.google.com/appengine/docs)
+  > App Engine is a fully managed, serverless platform for developing and hosting web applications at scale. You can choose from several popular languages, libraries, and frameworks to develop your apps, and then let App Engine take care of provisioning servers and scaling your app instances based on demand.
+  >
+  > -- [App Engine documentation](https://cloud.google.com/appengine/docs)
 
-    ![App Engine](./docs/app_engine.png)
+  ![App Engine](./docs/app_engine.png)
 
-  ### Cloud Run
+### Cloud Run
 
-    > Cloud Run is a managed compute platform that enables you to run containers that are invocable via requests or events. Cloud Run is serverless: it abstracts away all infrastructure management, so you can focus on what matters most — building great applications.
-    >
-    > -- [Cloud Run documentation]()
+  > Cloud Run is a managed compute platform that enables you to run containers that are invocable via requests or events. Cloud Run is serverless: it abstracts away all infrastructure management, so you can focus on what matters most — building great applications.
+  >
+  > -- [Cloud Run documentation]()
 
-    ![Cloud RUn](./docs/cloud_run.png)
+  ![Cloud RUn](./docs/cloud_run.png)
 
 ## Prerequisites
 
