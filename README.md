@@ -211,7 +211,7 @@ GCB pipelines handle operation of deploying and/or updating the application.
 
  1. Set GCB pipeline relevant to the chosen deployment
 
-    Substitute the path with the value taken from [Introduction](#introduction) table
+    Substitute the path with the value taken from the [Introduction](#introduction) table
 
     ```bash
     export CLOUD_BUILD_FILE=<put value here>
@@ -274,7 +274,7 @@ terraform destroy
 
 Superuser credentials are intended to be stored as Google Secret.
 Default name for the secret is `superuser_credentials`.
-These credentials are used by `cloudbuild/create_superuser.yaml` GCB pipeline for relevant superuser creation.
+These credentials are used by `cloudbuild/create_superuser.yaml` GCB pipeline for superuser creation.
 
 An easy way to quickly create and destroy Google Secrets is to use the `gcloud` cli.
 Optionally, resources could be created in TF as well, however if superuser credentials are needed only once,
@@ -426,9 +426,12 @@ If you want to run the app with connection to the cloud services you have to set
 ## Warnings!
 
  1. Remember to edit `.gcloudignore` and `.dockerignore`. It excludes all files except implicitly added.
+ 2. Running services and operations costs real **MONEY**. Make sure that you do not left any resources which consume credits.
+ 3. Examples here are not production ready and does not provide sufficient level of security. If you want to run it within your organization revise it with the person responsible for Cloud (e.g. Cloud Security Officer).
 
 ## Links
 
- - https://cloud.google.com/python/django/appengine
- - https://cloud.google.com/python/django/flexible-environment
- - https://cloud.google.com/python/django/run
+ - [ Python on Google Cloud](https://cloud.google.com/python)
+ - [Running Django on the App Engine standard environment](https://cloud.google.com/python/django/appengine)
+ - [Running Django on the App Engine flexible environment](https://cloud.google.com/python/django/flexible-environment)
+ - [Running Django on the Cloud Run environment ](https://cloud.google.com/python/django/run)
