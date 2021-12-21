@@ -1,0 +1,19 @@
+name: pre-commit
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@v2
+    - run: |
+         GO111MODULE="on"
+         go get github.com/terraform-docs/terraform-docs@v0.16.0
+    - uses: pre-commit/action@v2.0.3
