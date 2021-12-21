@@ -5,8 +5,10 @@
 **Table of Contents**
 
 - [Introduction](#introduction)
-- [App Engine](#app-engine)
-- [Cloud Run](#cloud-run)
+- [Google Cloud options](#google-cloud-options)
+  - [App Engine](#app-engine)
+  - [Cloud Run](#cloud-run)
+- [Django app changes specific for Google Cloud Platform](#django-app-changes-specific-for-google-cloud-platform)
 - [Prerequisites](#prerequisites)
 - [Instructions](#instructions)
   - [1. Types of deployments](#1-types-of-deployments)
@@ -15,6 +17,7 @@
   - [4. Deploy app](#4-deploy-app)
   - [5. Destroy infrastructure](#5-destroy-infrastructure)
   - [Extra: Create Django superuser](#extra-create-django-superuser)
+  - [How to run app locally](#how-to-run-app-locally)
 - [Warnings!](#warnings)
 - [Links](#links)
 
@@ -46,21 +49,115 @@ For GCB purposes I wrapped the app in Docker, even though the App Engine does no
 
 Hopefully such a condensed project may help you learn how GCP services may be used along with Python projects, so some ideas could be picked up in the future.
 
-## App Engine
 
-> App Engine is a fully managed, serverless platform for developing and hosting web applications at scale. You can choose from several popular languages, libraries, and frameworks to develop your apps, and then let App Engine take care of provisioning servers and scaling your app instances based on demand.
->
-> -- [App Engine documentation](https://cloud.google.com/appengine/docs)
+## Google Cloud options
 
-![App Engine](./docs/app_engine.png)
+### App Engine
 
-## Cloud Run
+  > App Engine is a fully managed, serverless platform for developing and hosting web applications at scale. You can choose from several popular languages, libraries, and frameworks to develop your apps, and then let App Engine take care of provisioning servers and scaling your app instances based on demand.
+  >
+  > -- [App Engine documentation](https://cloud.google.com/appengine/docs)
 
-> Cloud Run is a managed compute platform that enables you to run containers that are invocable via requests or events. Cloud Run is serverless: it abstracts away all infrastructure management, so you can focus on what matters most — building great applications.
->
-> -- [Cloud Run documentation]()
+  ![App Engine](./docs/app_engine.png)
 
-![Cloud RUn](./docs/cloud_run.png)
+### Cloud Run
+
+  > Cloud Run is a managed compute platform that enables you to run containers that are invocable via requests or events. Cloud Run is serverless: it abstracts away all infrastructure management, so you can focus on what matters most — building great applications.
+  >
+  > -- [Cloud Run documentation]()
+
+  ![Cloud RUn](./docs/cloud_run.png)
+
+## Django app changes specific for Google Cloud Platform
+
+All changes to the fresh Django app are located in `mysite/settings.py` file
+and touch three areas: secrets, database and storage.
+I will describe each of them.
+
+ 1. Secrets
+
+    As it depicted in diagrams from previous point, application connects to the Google Secrets service to obtain some sensitive information.
+
+    ```python
+    import io
+    import os
+    from pathlib import Path
+
+    import environ
+    from google.cloud import secretmanager
+
+    BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+    env = environ.Env(DEBUG=(bool, False))
+    env_file = os.path.join(BASE_DIR, ".env")
+
+
+    if os.path.isfile(env_file):
+        env.read_env(env_file)
+    # Pull secrets from Google Secret Manager
+    elif os.environ.get("GOOGLE_CLOUD_PROJECT", None):
+        project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+        settings_name = os.environ.get("SETTINGS_NAME", "django_settings")
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{project_id}/secrets/{settings_name}/versions/latest"
+        payload = client.access_secret_version(name=name).payload.data.decode("UTF-8")
+        env.read_env(io.StringIO(payload))
+    else:
+        raise Exception("No local .env or GOOGLE_CLOUD_PROJECT detected. No secrets found.")
+    ```
+
+    Environmental variables are handled by [`django-environ`](https://django-environ.readthedocs.io/en/latest/) package.
+
+    If `.env` file exists it is treated as source of secrets (extends environmental variables).
+
+    Otherwise, if `GOOGLE_CLOUD_PROJECT` environmental variables existence check is positive client of Google Secrets
+    fetches secret (with default name `django_settings`) and extends environmental variables as well.
+
+    If there no `.env` file and no `GOOGLE_CLOUD_PROJECT` exception is raised and app will not be able to start.
+
+    Secret consists of three variables:
+
+    - `SECRET_KEY` - which is used to provide cryptographic signing.
+    - `DATABASE_URL` - database connection information and credentials.
+    - `GS_BUCKET_NAME` - [Google Cloud Storage](https://cloud.google.com/storage/) bucket name (may be empty for Google App Engine standard environment).
+
+ 2. Database
+
+    ```python
+    default_sqlite3_database = "sqlite:///" + str(BASE_DIR / "db.sqlite3")
+    DATABASES = {"default": env.db("DATABASE_URL", default=default_sqlite3_database)}
+
+    # If the flag as been set, configure to use proxy
+    if os.getenv("USE_CLOUD_SQL_AUTH_PROXY", None):
+        DATABASES["default"]["HOST"] = "127.0.0.1"
+        DATABASES["default"]["PORT"] = 5432
+    ```
+
+    Database connection string is obtained from `DATABASE_URL` environments variables.
+    Otherwise, the default `sqlite3` database is used.
+
+    Then, if the `USE_CLOUD_SQL_AUTH_PROXY` environmental variables exits,
+    database connection is modified to make it work with [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy).
+
+ 3. Storage
+
+    ```python
+    GS_BUCKET_NAME = env("GS_BUCKET_NAME", default=None)
+
+    STATIC_URL = "/static/"
+
+    if GS_BUCKET_NAME:
+        DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+        STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+        GS_DEFAULT_ACL = "publicRead"
+    else:
+        STATIC_ROOT = "static"
+        STATICFILES_DIRS = []
+    ```
+
+    If `GS_BUCKET_NAME` environmental variables exits,
+    relevant storage backend is set with help of [django-storages](https://github.com/jschneier/django-storages/) package.
 
 ## Prerequisites
 
@@ -155,6 +252,8 @@ Most of the terminal commands stated here are executed within the Terraform envi
     EOF
     ```
 
+    More about variables: [Input Variables](https://www.terraform.io/language/values/variables) and [Variable Definition Precedence](https://www.terraform.io/language/values/variables#variable-definition-precedence)
+
 ### 3. Set up infrastructure
 
 Set up infrastructure with basic Terraform commands:
@@ -178,7 +277,7 @@ Known issues:
     terraform import module.$TERRAFORM_MODULE_NAME.google_app_engine_application.app "${PROJECT_ID}"
     ```
 
-    Replace $TERRAFORM_MODULE_NAME with relevant module name (see `main.tf` in env of your choice).
+    Replace `$TERRAFORM_MODULE_NAME` with relevant module name (see `main.tf` in env of your choice).
 
     Example for `django_gae_standard`:
 
@@ -196,14 +295,15 @@ Known issues:
 
 ### 4. Deploy app
 
-In my opinion when possible *Terraform* should be used to provide infrastructure only and
-deployment of the application itself should be handled separately.
+In my opinion when possible Terraform should be used to provide infrastructure only and
+deployment of the application itself should be handled separately
+(see [Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987))
 
-[Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)
+GCB pipelines handle operation of deploying and/or updating the application.
 
  1. Set GCB pipeline relevant to the chosen deployment
 
-    Substitute the path with the value taken from [Introduction](#introduction) table
+    Substitute the path with the value taken from the [Introduction](#introduction) table
 
     ```bash
     export CLOUD_BUILD_FILE=<put value here>
@@ -232,7 +332,7 @@ deployment of the application itself should be handled separately.
 
        Known issues:
 
-      - error during last step, terraform google provider issue, wait a little and retry
+      - error during last step, Terraform Google provider issue, wait a little and retry
 
           ```bash
           Step #5 - "deploy app": ERROR: (gcloud.app.deploy) NOT_FOUND: Unable to retrieve P4SA: [service-123456789101@gcp-gae-service.iam.gserviceaccount.com] from GAIA. Could be GAIA propagation delay or request from deleted apps.
@@ -266,7 +366,7 @@ terraform destroy
 
 Superuser credentials are intended to be stored as Google Secret.
 Default name for the secret is `superuser_credentials`.
-These credentials are used by `cloudbuild/create_superuser.yaml` GCB pipeline for relevant superuser creation.
+These credentials are used by `cloudbuild/create_superuser.yaml` GCB pipeline for superuser creation.
 
 An easy way to quickly create and destroy Google Secrets is to use the `gcloud` cli.
 Optionally, resources could be created in TF as well, however if superuser credentials are needed only once,
@@ -342,12 +442,88 @@ resource "google_secret_manager_secret_version" "superuser_credentials_version" 
 }
 ```
 
+### How to run app locally
+
+Instruction how to run app locally, with or without connection to the cloud services.
+If you want to run the app with connection to the cloud services you have to set up infrastructure first (steps 1-3 in [Instructions](#instructions)).
+
+1. Create Python virtual environment and install dependencies:
+
+    ```shell
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+
+1. Set up connection to the Google Cloud services (if you need them):
+
+- Authenticate to GCP:
+
+    ```shell
+    gcloud auth application-default login
+    ```
+
+- Install [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy):
+
+    ```shell
+    # Linux 64-bit
+    wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
+    # MacOS 64-bit
+    curl -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.darwin.amd64
+
+    chmod +x cloud_sql_proxy
+    ```
+
+- Export environment variables:
+
+    ```shell
+    export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+    export USE_CLOUD_SQL_AUTH_PROXY=true
+    ```
+
+2. Create `.env` file with secrets:
+
+- without connection to cloud services:
+
+   ```shell
+   echo "DEBUG=True" > .env
+   ```
+
+- with connection to cloud services (values fetched from Google Secrets):
+
+   ```shell
+   echo "DEBUG=True" > .env
+
+   # The output will be formatted as UTF-8 which can corrupt binary secrets.
+   # To get the raw bytes, have Cloud SDK print the response as base64-encoded and decode
+   gcloud secrets versions access latest --secret=django_settings --format='get(payload.data)' \
+     | tr '_-' '/+' | base64 -d >> .env
+   ```
+
+1. Run the Django migrations to set up your models and assets:
+
+    ```shell
+    python manage.py makemigrations
+    python manage.py makemigrations polls
+    python manage.py migrate
+    python manage.py collectstatic
+    ```
+
+1. Start the Django web server:
+
+    ```shell
+    python manage.py runserver
+    ```
+
 ## Warnings!
 
  1. Remember to edit `.gcloudignore` and `.dockerignore`. It excludes all files except implicitly added.
+ 2. Running services and operations costs real **MONEY**. Make sure that you do not left any resources which consume credits.
+ 3. Examples here are not production ready and does not provide sufficient level of security. If you want to run it within your organization revise it with the person responsible for Cloud (e.g. Cloud Security Officer).
 
 ## Links
 
- - https://cloud.google.com/python/django/appengine
- - https://cloud.google.com/python/django/flexible-environment
- - https://cloud.google.com/python/django/run
+ - [ Python on Google Cloud](https://cloud.google.com/python)
+ - [Running Django on the App Engine standard environment](https://cloud.google.com/python/django/appengine)
+ - [Running Django on the App Engine flexible environment](https://cloud.google.com/python/django/flexible-environment)
+ - [Running Django on the Cloud Run environment ](https://cloud.google.com/python/django/run)
