@@ -15,8 +15,8 @@
   - [3. Set up infrastructure](#3-set-up-infrastructure)
   - [4. Deploy app](#4-deploy-app)
   - [5. Destroy infrastructure](#5-destroy-infrastructure)
-- [Run app locally](#run-app-locally)
   - [Extra: Create Django superuser](#extra-create-django-superuser)
+  - [How to run app locally](#how-to-run-app-locally)
 - [Warnings!](#warnings)
 - [Links](#links)
 
@@ -267,79 +267,6 @@ deployment of the application itself should be handled separately.
 terraform destroy
 ```
 
-## Run app locally
-
-Instruction how to run app locally, with or without connection to the cloud services.
-If you want to run the app with connection to the cloud services you have to set up infrastructure first (steps 1-3 in [Instructions](#instructions)).
-
-1. Create Python virtual environment and install dependencies:
-
-    ```shell
-    python -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    ```
-
-1. Set up connection to the Google Cloud services (if you need them):
-
-- Authenticate to GCP:
-
-    ```shell
-    gcloud auth application-default login
-    ```
-
-- Install sql proxy:
-
-    ```shell
-    # Linux 64-bit
-    wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
-    # MacOS 64-bit
-    curl -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.darwin.amd64
-
-    chmod +x cloud_sql_proxy
-    ```
-
-- Export environment variables:
-
-    ```shell
-    export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
-    export USE_CLOUD_SQL_AUTH_PROXY=true
-    ```
-
-2. Create `.env` file with secrets:
-
-- without connection to cloud services:
-
-   ```shell
-   echo "DEBUG=True" > .env
-   ```
-
-- with connection to cloud services (values will be fetched from Google Secrets):
-
-   ```shell
-   echo "DEBUG=True" > .env
-
-   # The output will be formatted as UTF-8 which can corrupt binary secrets.
-   # To get the raw bytes, have Cloud SDK print the response as base64-encoded and decode
-   gcloud secrets versions access latest --secret=django_settings --format='get(payload.data)' \
-     | tr '_-' '/+' | base64 -d >> .env
-   ```
-
-1. Run the Django migrations to set up your models and assets:
-
-    ```shell
-    python manage.py makemigrations
-    python manage.py makemigrations polls
-    python manage.py migrate
-    python manage.py collectstatic
-    ```
-
-1. Start the Django web server:
-
-    ```shell
-    python manage.py runserver
-    ```
-
 ### Extra: Create Django superuser
 
 Superuser credentials are intended to be stored as Google Secret.
@@ -419,6 +346,79 @@ resource "google_secret_manager_secret_version" "superuser_credentials_version" 
   depends_on = [module.django_cloud_run]  # relevant module for your case
 }
 ```
+
+### How to run app locally
+
+Instruction how to run app locally, with or without connection to the cloud services.
+If you want to run the app with connection to the cloud services you have to set up infrastructure first (steps 1-3 in [Instructions](#instructions)).
+
+1. Create Python virtual environment and install dependencies:
+
+    ```shell
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+
+1. Set up connection to the Google Cloud services (if you need them):
+
+- Authenticate to GCP:
+
+    ```shell
+    gcloud auth application-default login
+    ```
+
+- Install sql proxy:
+
+    ```shell
+    # Linux 64-bit
+    wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
+    # MacOS 64-bit
+    curl -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.darwin.amd64
+
+    chmod +x cloud_sql_proxy
+    ```
+
+- Export environment variables:
+
+    ```shell
+    export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+    export USE_CLOUD_SQL_AUTH_PROXY=true
+    ```
+
+2. Create `.env` file with secrets:
+
+- without connection to cloud services:
+
+   ```shell
+   echo "DEBUG=True" > .env
+   ```
+
+- with connection to cloud services (values will be fetched from Google Secrets):
+
+   ```shell
+   echo "DEBUG=True" > .env
+
+   # The output will be formatted as UTF-8 which can corrupt binary secrets.
+   # To get the raw bytes, have Cloud SDK print the response as base64-encoded and decode
+   gcloud secrets versions access latest --secret=django_settings --format='get(payload.data)' \
+     | tr '_-' '/+' | base64 -d >> .env
+   ```
+
+1. Run the Django migrations to set up your models and assets:
+
+    ```shell
+    python manage.py makemigrations
+    python manage.py makemigrations polls
+    python manage.py migrate
+    python manage.py collectstatic
+    ```
+
+1. Start the Django web server:
+
+    ```shell
+    python manage.py runserver
+    ```
 
 ## Warnings!
 
