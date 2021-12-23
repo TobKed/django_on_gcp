@@ -29,7 +29,7 @@ repos:
         additional_dependencies: [flake8-isort]
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.62.1
+    rev: v1.62.3
     hooks:
       - id: terraform_fmt
       - id: terraform_docs

@@ -38,14 +38,14 @@ There are many ways to deploy a Django application on the GCP:
  - Compute Engine (not covered here)
 
 Most of them are covered in [GCP documentation](https://cloud.google.com/python/django/) which is quite good in my opinion, however if you are not familiar with the Cloud, all these services and operations may seem confusing (and redundant).
-Django apps mentioned in these tutorials are almost the same, they have changes dependent on the service type on which they were supposed to be running of course, nevertheless some changes are not related.
+Django apps mentioned in these tutorials are almost the same, they have changes dependent on the service type on which they were supposed to be running, nevertheless some changes are not related.
 Moreover, I found some of the tutorials and apps to contain tiny bugs.
 
-So what I have done here is a simple Django application (based on Django project tutorial:  [Writing your first Django app](https://docs.djangoproject.com/en/3.2/intro/tutorial01/), where all changes which are specific to given GCP services are grouped and can be found in the possible fewest number of places for an easy analysis.
+So what I have done here is a simple Django application (based on Django project tutorial: [Writing your first Django app](https://docs.djangoproject.com/en/3.2/intro/tutorial01/), where all changes specific to given GCP services are grouped and can be found in the possible fewest number of places for an easy analysis.
 Additionally, infrastructure is wrapped in the Terraform (IaC tool) which allows you to easily create (and destroy) all necessary resources.
 The process of deploying application itself is not handled by Terraform ([Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)), but it is wrapped in the easy to follow Google Cloud Build [GCB] pipelines,
 separate for each service. Due to the fact that inheritance between GCB pipelines is not possible, they have a lot in common but analysis of differences between them should not be a problem for you.
-For GCB purposes I wrapped the app in Docker, even though the App Engine does not require it, but it was the easiest way to provide proxy connection to Cloud SQL database ([app-engine-exec-wrapper,](https://github.com/GoogleCloudPlatform/ruby-docker/tree/master/app-engine-exec-wrapper)).
+For GCB purposes I wrapped the app in Docker, even though the App Engine does not require it, but it was the easiest way to provide a proxy connection to Cloud SQL database ([app-engine-exec-wrapper,](https://github.com/GoogleCloudPlatform/ruby-docker/tree/master/app-engine-exec-wrapper)).
 
 Hopefully such a condensed project may help you learn how GCP services may be used along with Python projects, so some ideas could be picked up in the future.
 
@@ -71,12 +71,12 @@ Hopefully such a condensed project may help you learn how GCP services may be us
 ## Django app changes specific for Google Cloud Platform
 
 All changes to the fresh Django app are located in `mysite/settings.py` file
-and touch three areas: secrets, database and storage.
+and are related to three areas: secrets, database and storage.
 I will describe each of them.
 
  1. Secrets
 
-    As it depicted in diagrams from previous point, application connects to the Google Secrets service to obtain some sensitive information.
+    As depicted in diagrams from the previous point, the application connects to the Google Secrets service to obtain some sensitive information.
 
     ```python
     import io
@@ -109,14 +109,14 @@ I will describe each of them.
 
     Environmental variables are handled by [`django-environ`](https://django-environ.readthedocs.io/en/latest/) package.
 
-    If `.env` file exists it is treated as source of secrets (extends environmental variables).
+    If the `.env` file exists it is treated as the source of secrets (extends environmental variables).
 
-    Otherwise, if `GOOGLE_CLOUD_PROJECT` environmental variables existence check is positive client of Google Secrets
-    fetches secret (with default name `django_settings`) and extends environmental variables as well.
+    Otherwise, if `GOOGLE_CLOUD_PROJECT` environmental variable existence check is positive, then client of Google Secrets
+    fetches the secret (with default name `django_settings`) and extends environmental variables with values from it.
 
-    If there no `.env` file and no `GOOGLE_CLOUD_PROJECT` variable, then exception is raised and app will not be able to start.
+    If there is no `.env` file and no `GOOGLE_CLOUD_PROJECT` variable, then an exception is raised and the app will not be able to start.
 
-    Secret consists of three variables:
+    The secret (mentioned `django_settings` from Google Secrets) consists of three variables:
 
     - `SECRET_KEY` - which is used to provide cryptographic signing.
     - `DATABASE_URL` - database connection information and credentials.
@@ -134,11 +134,11 @@ I will describe each of them.
         DATABASES["default"]["PORT"] = 5432
     ```
 
-    Database connection string is obtained from `DATABASE_URL` environments variables.
+    Database connection string is obtained from the `DATABASE_URL` environment variable.
     Otherwise, the default `sqlite3` database is used.
 
-    Then, if the `USE_CLOUD_SQL_AUTH_PROXY` environmental variables exits,
-    database connection is modified to make it work with [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy).
+    Then, if the `USE_CLOUD_SQL_AUTH_PROXY` environmental variable exists,
+    the database connection will be modified to make it work with [Cloud SQL Auth proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy).
 
  3. Storage
 
@@ -156,8 +156,7 @@ I will describe each of them.
         STATICFILES_DIRS = []
     ```
 
-    If `GS_BUCKET_NAME` environmental variables exits,
-    relevant storage backend is set with help of [django-storages](https://github.com/jschneier/django-storages/) package.
+    If `GS_BUCKET_NAME` environment variable exists, then the relevant storage backend will be set with the help of [django-storages](https://github.com/jschneier/django-storages/) package.
 
 ## Prerequisites
 
@@ -165,11 +164,11 @@ Topics you should be familiar with since they will be not covered:
 
  - Python and Django
  - Cloud - basic cloud concepts in general
- - Google Cloud Platform: basics of the services, use of `gcloud` CLI, managing billing, documentation about [Django on GCP (GCP documentation)](https://cloud.google.com/python/django/)
+ - Google Cloud Platform: basics of the services, use of `gcloud` CLI, managing billing and documentation about [Django on GCP (GCP documentation)](https://cloud.google.com/python/django/)
  - Terraform -  basic use and concepts. You can also check my tutorial on Medium: [Terraform Tutorial: Introduction to Infrastructure as Code](https://tobiaszkedzierski.medium.com/terraform-tutorial-introduction-to-infrastructure-as-code-dccec643bfdb)
 
 What you should prepare:
- - Google Cloud Project - create a fresh GCP project or use an existing one (however it may cause Terraform exceptions)
+ - Google Cloud Project - create a fresh GCP project or use an existing one (but it may cause Terraform exceptions)
  - [`gcloud`](https://cloud.google.com/sdk/gcloud) - install GCP cli and authorize it with a relevant GCP Project
  - [Terraform](https://www.terraform.io/downloads.html) - install the latest version
  - Python [optionally] - Python 3.9 in virtual environment if you want to run Django app locally
@@ -177,7 +176,7 @@ What you should prepare:
 
 ## Instructions
 
-Most of the terminal commands stated here are executed within the Terraform environment folder relevant to chosen solution.
+Most of the terminal commands stated here are executed within the Terraform environment folder relevant to the chosen solution.
 
 ### 1. Types of deployments
 
@@ -193,9 +192,9 @@ Most of the terminal commands stated here are executed within the Terraform envi
  1. Shell environmental variables
 
     Set environmental variables.
-    Some values you have to know by hard, like `PROJECT_ID`.
-    Others you can generate on the fly, like `DJANGO_SECRET_KEY` however remember to keep them somewhere (see next step).
-    They will be used to provide input variables for terraform and for `gcloud` commands.
+    Some values you have to know beforehand, like `PROJECT_ID`.
+    Others you can generate on the fly, like `DJANGO_SECRET_KEY` however, remember to keep them somewhere (see the next step).
+    They will be used to provide input variables for Terraform and for `gcloud` commands.
 
     ```bash
     export PROJECT_ID=django-cloud-tf-test-001
@@ -212,7 +211,7 @@ Most of the terminal commands stated here are executed within the Terraform envi
     export SQL_PASSWORD=$(cat /dev/urandom | LC_ALL=C tr -dc '[:alpha:]'| fold -w 10 | head -n1)
     ```
 
- 2. `gcloud` config project
+ 2. `gcloud` project configuration
 
     ```bash
     gcloud config set project $PROJECT_ID
@@ -235,8 +234,8 @@ Most of the terminal commands stated here are executed within the Terraform envi
     export TF_VAR_cloud_run_service_account_name=$SERVICE_ACCOUNT_NAME
     ```
 
-    Another way to provide input variables is `.tfvars` file.
-    With variables set in previous such file could be generated with following command:
+    Another way to provide input variables is the '.tfvars' file.
+    With variables set in the previous step, such file could be generated with the following command:
 
     ```bash
     cat << EOF > terraform.tfvars
@@ -266,18 +265,18 @@ terraform apply
 
 Known issues:
 
- - [No way to delete an application ](https://issuetracker.google.com/issues/35874988) - 13 years old google issue:
+ - [No way to delete an application](https://issuetracker.google.com/issues/35874988) - 13 years old Google issue:
 
    ```Error: Error creating App Engine application: googleapi: Error 409: This application already exists and cannot be re-created., alreadyExist```
 
-    After destroying infrastructure and applying again this error will occur since the previous App Engine app was (silently) not deleted.
-    It could be fixed by importing existing App Engine into terraform state:
+    After destroying infrastructure and recreating it again this error occurs since the App Engine app was (silently) not deleted as intended.
+    It could be fixed by importing the existing App Engine app into Terraform state:
 
     ```shell
     terraform import module.$TERRAFORM_MODULE_NAME.google_app_engine_application.app "${PROJECT_ID}"
     ```
 
-    Replace `$TERRAFORM_MODULE_NAME` with relevant module name (see `main.tf` in env of your choice).
+    Replace `$TERRAFORM_MODULE_NAME` with the relevant module name (see `main.tf` in env of your choice).
 
     Example for `django_gae_standard`:
 
@@ -287,19 +286,19 @@ Known issues:
 
     More about importing: [Terraform - import](https://www.terraform.io/docs/cli/import/index.html)
 
- - random null for `data.google_project.project.number` ([my comment on `hashicorp/terraform-provider-google - data.google_project.project.project_id sometimes null` issue](https://github.com/hashicorp/terraform-provider-google/issues/10587#issuecomment-984589651)):
+ - random null occurrence for `data.google_project.project.number` ([my comment on `hashicorp/terraform-provider-google - data.google_project.project.project_id sometimes null` issue](https://github.com/hashicorp/terraform-provider-google/issues/10587#issuecomment-984589651)):
 
     ```The expression result is null. Cannot include a null value in a string template.```
 
-    The only solution here is to retry until it works and wait until the new version of `hashicorp/terraform-provider-google` will not have this issue.
+    The only solution here is to retry until it works and wait until the new version of the `hashicorp/terraform-provider-google` has it eliminated.
 
 ### 4. Deploy app
 
-In my opinion when possible Terraform should be used to provide infrastructure only and
+I share the opinion that Terraform should only be used to provide the infrastructure and the
 deployment of the application itself should be handled separately
-(see [Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987))
+(see [Don’t Deploy Applications with Terraform - Paul Durivage](https://medium.com/google-cloud/dont-deploy-applications-with-terraform-2f4508a45987)).
 
-GCB pipelines handle operation of deploying and/or updating the application.
+GCB pipelines handle the operation of deploying and/or updating the application.
 
  1. Set GCB pipeline relevant to the chosen deployment
 
@@ -332,7 +331,7 @@ GCB pipelines handle operation of deploying and/or updating the application.
 
        Known issues:
 
-      - error during last step, Terraform Google provider issue, wait a little and retry
+      - ambiguous error occurrence during the last step, a Terraform Google provider issue, wait a while and retry
 
           ```bash
           Step #5 - "deploy app": ERROR: (gcloud.app.deploy) NOT_FOUND: Unable to retrieve P4SA: [service-123456789101@gcp-gae-service.iam.gserviceaccount.com] from GAIA. Could be GAIA propagation delay or request from deleted apps.
@@ -405,7 +404,7 @@ it does not seem to be the best idea to store it as IaC.
     gcloud secrets delete $SECRET_NAME
     ```
 
-Optionally create Secret as Terraform resource (credentials provided as variables):
+Optionally create Secret as a Terraform resource (credentials provided as variables):
 
 ```hcl
 variable "django_superuser_username" {
@@ -444,8 +443,8 @@ resource "google_secret_manager_secret_version" "superuser_credentials_version" 
 
 ### How to run app locally
 
-Instruction how to run app locally, with or without connection to the cloud services.
-If you want to run the app with connection to the cloud services you have to set up infrastructure first (steps 1-3 in [Instructions](#instructions)).
+Instruction on how to run this app locally with or without connection to the cloud services.
+If you want to run the app with connection to the cloud services you have to set up the infrastructure first (steps 1-3 in [Instructions](#instructions)).
 
 1. Create Python virtual environment and install dependencies:
 
@@ -455,7 +454,7 @@ If you want to run the app with connection to the cloud services you have to set
     pip install -r requirements.txt
     ```
 
-1. Set up connection to the Google Cloud services (if you need them):
+1. Set up connection to Google Cloud services (if you need them):
 
 - Authenticate to GCP:
 
@@ -518,8 +517,8 @@ If you want to run the app with connection to the cloud services you have to set
 ## Warnings!
 
  1. Remember to edit `.gcloudignore` and `.dockerignore`. It excludes all files except implicitly added.
- 2. Running services and operations costs real **MONEY**. Make sure that you do not left any resources which consume credits.
- 3. Examples here are not production ready and does not provide sufficient level of security. If you want to run it within your organization revise it with the person responsible for Cloud (e.g. Cloud Security Officer).
+ 2. Running services and operations costs real **MONEY**. Make sure that you do not leave any resources that consume credits unintentionally.
+ 3. Examples here are not production-ready and do not provide a sufficient level of security. If you want to run it within your organization, consult it with the person responsible for Cloud (e.g. Cloud Security Officer).
 
 ## Links
 
