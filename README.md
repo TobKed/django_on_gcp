@@ -10,7 +10,7 @@
   - [Cloud Run](#cloud-run)
 - [Django app changes specific for Google Cloud Platform](#django-app-changes-specific-for-google-cloud-platform)
 - [Prerequisites](#prerequisites)
-- [Instructions](#instructions)
+- [Instruction](#instruction)
   - [1. Types of deployments](#1-types-of-deployments)
   - [2. Variables specific for your GCP project](#2-variables-specific-for-your-gcp-project)
   - [3. Set up infrastructure](#3-set-up-infrastructure)
@@ -174,7 +174,7 @@ What you should prepare:
  - Python [optionally] - Python 3.9 in virtual environment if you want to run Django app locally
 
 
-## Instructions
+## Instruction
 
 Most of the terminal commands stated here are executed within the Terraform environment folder relevant to the chosen solution.
 
@@ -302,7 +302,7 @@ GCB pipelines handle the operation of deploying and/or updating the application.
 
  1. Set GCB pipeline relevant to the chosen deployment
 
-    Substitute the path with the value taken from the [Introduction](#introduction) table
+    Substitute the path with the value taken from the [Types of deployments](#1-types-of-deployments) table
 
     ```bash
     export CLOUD_BUILD_FILE=<put value here>
