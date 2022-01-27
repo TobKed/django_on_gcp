@@ -65,7 +65,7 @@ This architecture consists of:
 - App Engine - the main service which provides Django app directly to the users
 - Secrets - stores sensitive data (secret key, database credentials, bucket name, etc.)
 - Cloud SQL - relational database (PostgreSQL)
-- Cloud Storage - file storage (static files could optionally be served by App Engine directly )
+- Cloud Storage - file storage (static files could optionally be served by App Engine directly)
 
 ### Cloud Run
 
