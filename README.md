@@ -60,6 +60,13 @@ Hopefully such a condensed project may help you learn how GCP services may be us
 
   ![App Engine](./docs/app_engine.png)
 
+This architecture consists of:
+
+- App Engine - the main service which provides Django app directly to the users
+- Secrets - stores sensitive data (secret key, database credentials, bucket name, etc.)
+- Cloud SQL - relational database (PostgreSQL)
+- Cloud Storage - file storage (static files could optionally be served by App Engine directly )
+
 ### Cloud Run
 
   > Cloud Run is a managed compute platform that enables you to run containers that are invocable via requests or events. Cloud Run is serverless: it abstracts away all infrastructure management, so you can focus on what matters most — building great applications.
@@ -67,6 +74,13 @@ Hopefully such a condensed project may help you learn how GCP services may be us
   > -- [Cloud Run documentation]()
 
   ![Cloud RUn](./docs/cloud_run.png)
+
+This architecture consists of:
+
+- Cloud Run- the main service which provides Django app directly to the users
+- Secrets - stores sensitive data (secret key, database credentials, bucket name, etc.)
+- Cloud SQL - relational database (PostgreSQL)
+- Cloud Storage - file storage
 
 ## Django app changes specific for Google Cloud Platform
 
